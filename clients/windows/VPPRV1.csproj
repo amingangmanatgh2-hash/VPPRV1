@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <AssemblyName>VPPRV1</AssemblyName>
     <RootNamespace>VPPRV1</RootNamespace>
   </PropertyGroup>

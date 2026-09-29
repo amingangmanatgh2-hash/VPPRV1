@@ -24,11 +24,11 @@ jobs:
       - name: Publish .NET 8 Project
         run: |
           cd clients/windows
-          dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o bin/Release/net8.0/win-x64/publish
+          dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish-out
 
       - name: Create Portable ZIP Package
         run: |
-          Compress-Archive -Path clients/windows/bin/Release/net8.0/win-x64/publish/* -DestinationPath VPPRV1-Portable.zip
+          Compress-Archive -Path clients/windows/publish-out/* -DestinationPath VPPRV1-Portable.zip
 
       - name: Compile NSIS Installer
         uses: joncloud/makensis-action@v4

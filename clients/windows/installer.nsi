@@ -19,7 +19,7 @@ ShowUnInstDetails show
 Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File /r "clients\windows\bin\Release\net8.0\win-x64\publish\*.*"
+  File /r "clients\windows\publish-out\*.*"
   
   CreateDirectory "$SMPROGRAMS\VPPRV1"
   CreateShortCut "$SMPROGRAMS\VPPRV1\VPPRV1.lnk" "$INSTDIR\VPPRV1.exe"
