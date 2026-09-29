@@ -1,0 +1,17 @@
+{
+  "name": "vpprv1",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VPN Project Preview V1 — وب‌سایت، پنل و API فارسی",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "typecheck": "wrangler types --check",
+    "deploy": "npm run build && wrangler deploy",
+    "db:local": "wrangler d1 migrations apply vpprv1-db --local"
+  },
+  "devDependencies": {
+    "wrangler": "^4.43.0"
+  }
+}
