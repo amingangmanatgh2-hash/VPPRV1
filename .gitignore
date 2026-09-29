@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.npm/
+
+# Cloudflare & Wrangler
+.wrangler/
+.mf/
+dist/
+
+# .NET & Visual Studio / Avalonia
+bin/
+obj/
+*.user
+*.suo
+.vs/
+
+# Android & Gradle
+.gradle/
+build/
+local.properties
+*.keystore
+*.jks
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# Environment variables & secrets (Zero-Leakage Security)
+.env
+.env.*
+*.pem
+*.key
+*.secret
+credentials.json
+
+# OS files
+.DS_Store
+Thumbs.db

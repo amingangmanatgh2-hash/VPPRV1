@@ -1,0 +1,29 @@
+name: Linux Client Build
+
+on:
+  push:
+    paths:
+      - 'clients/linux/**'
+      - '.github/workflows/linux-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Package Linux Client (CLI & Installer)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Package Linux Tarball
+        run: |
+          cd clients/linux
+          chmod +x vpprv1 install.sh
+          tar -czvf ../../VPPRV1-Linux.tar.gz vpprv1 install.sh
+
+      - name: Upload Linux Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-tarball
+          path: VPPRV1-Linux.tar.gz

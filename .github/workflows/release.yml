@@ -1,0 +1,37 @@
+name: Release Package & Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Create GitHub Release with Binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build Linux Tarball
+        run: |
+          cd clients/linux
+          chmod +x vpprv1 install.sh
+          tar -czvf ../../VPPRV1-Linux.tar.gz vpprv1 install.sh
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: VPPRV1 Version ${{ github.ref_name }}
+          body: |
+            ## انتشار نسخه رسمی سامانه VPPRV1
+            
+            - پروتکل کامل WireGuard مبتنی بر X25519 و PSK
+            - پشتیبانی از حالت نت ملی (Split Tunnel) روی UDP 443 و MTU 1330
+            - کلاینت‌های رسمی ویندوز، اندروید و لینوکس
+          files: |
+            VPPRV1-Linux.tar.gz

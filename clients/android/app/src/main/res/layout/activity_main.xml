@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#080C14"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="VPPRV1"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#10B981" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="سامانه اتصال هوشمند WireGuard"
+        android:textSize="14sp"
+        android:textColor="#9CA3AF"
+        android:layout_marginBottom="40dp" />
+
+    <Button
+        android:id="@+id/btnConnect"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:background="#10B981"
+        android:text="⚡ اتصال"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/txtStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="قطع"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="24dp" />
+
+    <TextView
+        android:id="@+id/txtDuration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="۰۰:۰۰:۰۰"
+        android:textSize="16sp"
+        android:textColor="#9CA3AF"
+        android:layout_marginTop="8dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#121A2B"
+        android:padding="16dp"
+        android:layout_marginTop="40dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="حالت نت ملی (Split Tunnel)"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp" />
+
+        <Switch
+            android:id="@+id/switchMelli"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+</LinearLayout>

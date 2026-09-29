@@ -1,0 +1,44 @@
+name: Windows Client Build
+
+on:
+  push:
+    paths:
+      - 'clients/windows/**'
+      - '.github/workflows/windows-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Windows Client (.NET 8 & NSIS)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Publish .NET 8 Project
+        run: |
+          cd clients/windows
+          dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o bin/Release/net8.0/win-x64/publish
+
+      - name: Create Portable ZIP Package
+        run: |
+          Compress-Archive -Path clients/windows/bin/Release/net8.0/win-x64/publish/* -DestinationPath VPPRV1-Portable.zip
+
+      - name: Compile NSIS Installer
+        uses: joncloud/makensis-action@v4
+        with:
+          script-file: clients/windows/installer.nsi
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-client-binaries
+          path: |
+            VPPRV1-Setup.exe
+            VPPRV1-Portable.zip

@@ -1,0 +1,19 @@
+{
+  "name": "vpprv1-backend",
+  "version": "1.0.0",
+  "description": "VPPRV1 Cloudflare Workers Backend with D1 & WireGuard X25519",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --ip 0.0.0.0 --port 8787",
+    "test": "node --test tests/backend.test.js",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.4.0",
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.100.0"
+  }
+}

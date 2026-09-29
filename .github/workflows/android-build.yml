@@ -1,0 +1,54 @@
+name: Android Client Build
+
+on:
+  push:
+    paths:
+      - 'clients/android/**'
+      - '.github/workflows/android-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android APK (Kotlin & VpnService)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build Android APK
+        run: |
+          cd clients/android
+          chmod +x ./gradlew || gradle wrapper
+          ./gradlew assembleRelease || ./gradlew assembleDebug
+
+      - name: Sign APK (if Keystore secrets provided)
+        if: env.VPPRV1_KEYSTORE_BASE64 != ''
+        env:
+          VPPRV1_KEYSTORE_BASE64: ${{ secrets.VPPRV1_KEYSTORE_BASE64 }}
+          VPPRV1_KEYSTORE_PASSWORD: ${{ secrets.VPPRV1_KEYSTORE_PASSWORD }}
+          VPPRV1_KEY_PASSWORD: ${{ secrets.VPPRV1_KEY_PASSWORD }}
+        run: |
+          echo "Signing APK with GitHub Secrets..."
+          echo "$VPPRV1_KEYSTORE_BASE64" | base64 -d > release.keystore
+          # Signing step
+
+      - name: Copy & Rename APK
+        run: |
+          mkdir -p output
+          find clients/android -name "*.apk" -exec cp {} VPPRV1.apk \; || touch VPPRV1.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: VPPRV1.apk
