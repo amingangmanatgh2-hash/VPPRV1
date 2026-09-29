@@ -31,8 +31,10 @@ jobs:
           Compress-Archive -Path clients/windows/publish-out/* -DestinationPath VPPRV1-Portable.zip
 
       - name: Compile NSIS Installer
+        shell: powershell
         run: |
-          & "C:\Program Files (x86)\NSIS\makensis.exe" /V4 clients\windows\installer.nsi
+          $publishPath = Resolve-Path "clients\windows\publish-out"
+          & "C:\Program Files (x86)\NSIS\makensis.exe" "/DPUBLISH_DIR=$publishPath" "clients\windows\installer.nsi"
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
