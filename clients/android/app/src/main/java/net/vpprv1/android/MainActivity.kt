@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnConnect: Button
     private lateinit var txtStatus: TextView
     private lateinit var txtDuration: TextView
-    private lateinit var switchMelli: Switch
+    private lateinit var switchReality: Switch
     
     private var isConnected = false
     private val client = OkHttpClient()
@@ -32,20 +32,12 @@ class MainActivity : AppCompatActivity() {
         btnConnect = findViewById(R.id.btnConnect)
         txtStatus = findViewById(R.id.txtStatus)
         txtDuration = findViewById(R.id.txtDuration)
-        switchMelli = findViewById(R.id.switchMelli)
+        switchReality = findViewById(R.id.switchReality)
 
         btnConnect.setOnClickListener {
             if (isConnected) {
                 disconnectVPN()
             } else {
-                prepareVPN()
-            }
-        }
-
-        switchMelli.setOnCheckedChangeListener { _, isChecked ->
-            if (isConnected) {
-                // Reconnect with split tunnel
-                disconnectVPN()
                 prepareVPN()
             }
         }
@@ -73,7 +65,7 @@ class MainActivity : AppCompatActivity() {
 
         scope.launch {
             try {
-                // 1. Provision Subscription
+                // 1. Provision VLESS Subscription
                 val req = Request.Builder()
                     .url("https://vpprv1.workers.dev/api/v1/provision")
                     .post(okhttp3.RequestBody.create(null, ByteArray(0)))
@@ -83,13 +75,13 @@ class MainActivity : AppCompatActivity() {
                 val body = resp.body?.string() ?: ""
                 val json = JSONObject(body)
                 val token = json.optString("token")
+                val vlessUri = json.optString("vless_uri")
 
                 txtStatus.text = "اتصال..."
                 delay(400)
 
                 val vpnIntent = Intent(this@MainActivity, VPPRV1VpnService::class.java).apply {
-                    putExtra("CLIENT_IP", "10.66.1.2")
-                    putExtra("IS_MELLI", switchMelli.isChecked)
+                    putExtra("CLIENT_IP", "172.19.0.1")
                 }
                 startService(vpnIntent)
 

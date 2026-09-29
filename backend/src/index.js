@@ -1,11 +1,10 @@
-// VPPRV1 Cloudflare Workers Main Backend Application
+// VPPRV1 Cloudflare Workers Main Backend Application for Xray Core & VLESS
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { generateWireGuardKeyPair, generatePresharedKey, hashPassword, verifyPassword, createSessionToken, verifySessionToken, timingSafeEqual } from './crypto.js';
+import { generateUUID, generateShortId, hashPassword, verifyPassword, createSessionToken, verifySessionToken, timingSafeEqual } from './crypto.js';
 import { ensureSeedData } from './seed.js';
-import { buildWireGuardConfig } from './wg-config.js';
+import { buildVlessUri, buildXrayClientJson, buildXrayServerInboundConfig } from './xray-config.js';
 import { checkRateLimit } from './rate-limit.js';
-import { calculateSplitAllowedIPs, IRAN_CIDRS } from './iran-cidrs.js';
 import { 
   renderHomePage, 
   renderFeaturesPage, 
@@ -24,7 +23,7 @@ const app = new Hono();
 app.use('*', cors({
   origin: '*',
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization']
+  allowHeaders: ['Content-Type', 'Authorization', 'X-Node-Id', 'X-Server-Id']
 }));
 
 // Helper to get client IP
@@ -50,12 +49,12 @@ app.use('*', async (c, next) => {
 app.get('/', (c) => c.html(renderHomePage()));
 app.get('/features', (c) => c.html(renderFeaturesPage()));
 app.get('/servers', async (c) => {
-  let servers = [];
+  let nodes = [];
   if (c.env && c.env.DB) {
-    const res = await c.env.DB.prepare("SELECT * FROM servers ORDER BY country ASC").all();
-    servers = res.results || [];
+    const res = await c.env.DB.prepare("SELECT * FROM nodes ORDER BY country ASC").all();
+    nodes = res.results || [];
   }
-  return c.html(renderServersPage(servers));
+  return c.html(renderServersPage(nodes));
 });
 app.get('/downloads', (c) => c.html(renderDownloadsPage()));
 app.get('/guide', (c) => c.html(renderGuidePage()));
@@ -68,15 +67,17 @@ app.get('/panel', (c) => c.html(renderAdminPanelPage()));
 // PUBLIC API ENDPOINTS
 // -------------------------------------------------------------
 
-// GET /api/servers
+// GET /api/servers (Returns Xray VPS nodes)
 app.get('/api/servers', async (c) => {
   try {
     if (!c.env || !c.env.DB) {
-      return c.json({ success: true, servers: [] });
+      return c.json({ success: true, count: 0, servers: [] });
     }
     const res = await c.env.DB.prepare(`
-      SELECT id, name, country, flag, host, port, public_key, status, load, latency, peers_count, agent_token, last_heartbeat 
-      FROM servers ORDER BY country ASC
+      SELECT id, name, country, flag, provider, host, port, ws_port, protocol, transport, security,
+             reality_public_key, reality_short_id, reality_server_name, ws_path,
+             status, load, latency, users_count, agent_token, last_heartbeat
+      FROM nodes ORDER BY country ASC
     `).all();
     return c.json({ success: true, count: res.results.length, servers: res.results });
   } catch (err) {
@@ -90,32 +91,35 @@ app.get('/api/servers/status', async (c) => {
     if (!c.env || !c.env.DB) {
       return c.json({ success: true, online_count: 0, total_count: 0, servers: [] });
     }
-    const serversRes = await c.env.DB.prepare("SELECT * FROM servers").all();
-    const servers = serversRes.results || [];
-    const onlineServers = servers.filter(s => s.status === 'online');
-    const totalPeers = servers.reduce((acc, s) => acc + (s.peers_count || 0), 0);
-    const avgLatency = onlineServers.length > 0 
-      ? Math.round(onlineServers.reduce((acc, s) => acc + s.latency, 0) / onlineServers.length) 
+    const nodesRes = await c.env.DB.prepare("SELECT * FROM nodes").all();
+    const nodes = nodesRes.results || [];
+    const onlineNodes = nodes.filter(n => n.status === 'online');
+    const totalUsers = nodes.reduce((acc, n) => acc + (n.users_count || 0), 0);
+    const avgLatency = onlineNodes.length > 0 
+      ? Math.round(onlineNodes.reduce((acc, n) => acc + n.latency, 0) / onlineNodes.length) 
       : 0;
 
     return c.json({
       success: true,
-      total_count: servers.length,
-      online_count: onlineServers.length,
-      offline_count: servers.length - onlineServers.length,
-      total_active_peers: totalPeers,
+      total_count: nodes.length,
+      online_count: onlineNodes.length,
+      offline_count: nodes.length - onlineNodes.length,
+      total_active_users: totalUsers,
       average_latency_ms: avgLatency,
       timestamp: Date.now(),
-      servers: servers.map(s => ({
-        id: s.id,
-        name: s.name,
-        country: s.country,
-        flag: s.flag,
-        status: s.status,
-        latency: s.latency,
-        load: s.load,
-        peers: s.peers_count,
-        last_heartbeat: s.last_heartbeat
+      servers: nodes.map(n => ({
+        id: n.id,
+        name: n.name,
+        country: n.country,
+        flag: n.flag,
+        provider: n.provider,
+        protocol: n.protocol,
+        security: n.security,
+        status: n.status,
+        latency: n.latency,
+        load: n.load,
+        users_count: n.users_count,
+        last_heartbeat: n.last_heartbeat
       }))
     });
   } catch (err) {
@@ -128,6 +132,7 @@ app.get('/api/versions', (c) => {
   return c.json({
     success: true,
     version: "1.0.0",
+    engine: "Xray Core & VLESS",
     release_date: "2026-09-29",
     platforms: {
       windows: {
@@ -147,16 +152,16 @@ app.get('/api/versions', (c) => {
       linux: {
         version: "1.0.0",
         file: "VPPRV1-Linux.tar.gz",
-        framework: "CLI WireGuard Integration",
+        framework: "CLI Xray Core Integration",
         min_os: "Linux Kernel 5.4+",
         download_url: "/api/downloads/VPPRV1-Linux.tar.gz"
       }
     },
     changelog: [
-      "انتشار اولین نسخه رسمی پلتفرم VPPRV1",
-      "پشتیبانی کامل از الگوریتم مدرن رمزنگاری X25519",
-      "مسیریابی هوشمند تفکیک ترافیک نت ملی با MTU 1330 و UDP 443",
-      "سیستم همگام‌سازی بلادرنگ Node Agent برای سرورهای لینوکس"
+      "معماری کامل مبتنی بر Xray Core و VLESS Reality",
+      "همگام‌سازی بلادرنگ کاربران، ترافیک و انقضا با سرورهای Hetzner، Vultr و OVH",
+      "پشتیبانی از فرمت‌های استاندارد vless:// و JSON کلاینت",
+      "سیستم مدیریت حجم مصرفی و کنترل هوشمند انقضا"
     ]
   });
 });
@@ -201,21 +206,19 @@ app.get('/api/downloads', (c) => {
 // GET /api/downloads/:filename
 app.get('/api/downloads/:filename', (c) => {
   const filename = c.req.param('filename');
-  // Return downloadable content or redirection
   const githubReleaseUrl = `https://github.com/amingangmanatgh2-hash/VPPRV1/releases/download/v1.0.0/${filename}`;
   return c.redirect(githubReleaseUrl, 302);
 });
 
 // -------------------------------------------------------------
-// PROVISIONING & SUBSCRIPTION
+// PROVISIONING & SUBSCRIPTION (VLESS Standard)
 // -------------------------------------------------------------
 
-// POST /api/v1/provision (Generates a valid subscription without user input)
+// POST /api/v1/provision (Generates a valid VLESS subscription without user input)
 app.post('/api/v1/provision', async (c) => {
   const clientIP = getClientIP(c);
 
   if (c.env && c.env.DB) {
-    // Check Rate Limit (5 requests per 10 minutes per IP)
     const rateCheck = await checkRateLimit(c.env.DB, clientIP, 'provision', 10, 600000);
     if (!rateCheck.allowed) {
       return c.json({
@@ -227,63 +230,72 @@ app.post('/api/v1/provision', async (c) => {
   }
 
   try {
-    // Generate real cryptographic X25519 keypair for client
-    const clientKeypair = generateWireGuardKeyPair();
-    const psk = generatePresharedKey();
+    const userUUID = generateUUID();
     const token = "sub_" + crypto.randomUUID().replace(/-/g, "");
+    const username = "user_" + userUUID.substring(0, 8);
+    const now = Date.now();
+    const expiresAt = now + (30 * 24 * 60 * 60 * 1000); // 30 days
+    const trafficLimit = 50 * 1024 * 1024 * 1024; // 50 GB default quota
 
-    // Choose default or best server
-    let selectedServer = null;
+    let selectedNode = null;
     if (c.env && c.env.DB) {
-      // Prefer online server with lowest load, else first server
-      const onlineServer = await c.env.DB.prepare("SELECT * FROM servers WHERE status = 'online' ORDER BY load ASC, latency ASC LIMIT 1").first();
-      if (onlineServer) {
-        selectedServer = onlineServer;
+      const onlineNode = await c.env.DB.prepare("SELECT * FROM nodes WHERE status = 'online' ORDER BY load ASC, latency ASC LIMIT 1").first();
+      if (onlineNode) {
+        selectedNode = onlineNode;
       } else {
-        selectedServer = await c.env.DB.prepare("SELECT * FROM servers LIMIT 1").first();
+        selectedNode = await c.env.DB.prepare("SELECT * FROM nodes LIMIT 1").first();
       }
     }
 
-    const serverId = selectedServer ? selectedServer.id : "de-fra-1";
-    const serverName = selectedServer ? selectedServer.name : "آلمان (فرانکفورت)";
-
-    // Allocate client address
-    const octet3 = Math.floor(Math.random() * 250) + 1;
-    const octet4 = Math.floor(Math.random() * 250) + 2;
-    const clientAddress = `10.66.${octet3}.${octet4}/32`;
-
-    const now = Date.now();
-    const expiresAt = now + (30 * 24 * 60 * 60 * 1000); // 30 days
+    const nodeId = selectedNode ? selectedNode.id : "hetzner-de-1";
+    const nodeName = selectedNode ? selectedNode.name : "آلمان - فرانکفورت (Hetzner)";
+    const nodeHost = selectedNode ? selectedNode.host : "de1.vpprv1.net";
+    const nodePort = selectedNode ? selectedNode.port : 443;
+    const nodePubkey = selectedNode ? selectedNode.reality_public_key : "kQ9bU1wX8z7yA6v5c4b3a2Z1Y0X9w8V7u6T5s4R3q2P";
+    const nodeShortId = selectedNode ? selectedNode.reality_short_id : "a1b2c3d4";
+    const nodeSni = selectedNode ? selectedNode.reality_server_name : "www.microsoft.com";
 
     if (c.env && c.env.DB) {
-      // Save subscription
+      // Save User
       await c.env.DB.prepare(`
-        INSERT INTO subscriptions (token, user_id, created_ip, server_id, client_private_key, client_public_key, client_address, preshared_key, mode, is_active, created_at, expires_at)
-        VALUES (?, 'guest', ?, ?, ?, ?, ?, ?, 'full', 1, ?, ?)
-      `).bind(token, clientIP, serverId, clientKeypair.privateKey, clientKeypair.publicKey, clientAddress, psk, now, expiresAt).run();
+        INSERT INTO users (id, username, email, uuid, status, traffic_limit_bytes, traffic_used_bytes, created_at, expires_at)
+        VALUES (?, ?, ?, ?, 'active', ?, 0, ?, ?)
+      `).bind(userUUID, username, `${username}@vpprv1.net`, userUUID, trafficLimit, now, expiresAt).run();
 
-      // Save peer record for agent sync
-      const peerId = "peer_" + crypto.randomUUID().replace(/-/g, "").substring(0, 12);
+      // Save Subscription
       await c.env.DB.prepare(`
-        INSERT INTO peers (id, server_id, subscription_token, public_key, preshared_key, allowed_ips, status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, 'active', ?)
-      `).bind(peerId, serverId, token, clientKeypair.publicKey, psk, clientAddress, now).run();
+        INSERT INTO subscriptions (token, user_id, created_ip, node_id, protocol, transport, security, is_active, created_at, expires_at)
+        VALUES (?, ?, ?, ?, 'vless', 'tcp', 'reality', 1, ?, ?)
+      `).bind(token, userUUID, clientIP, nodeId, now, expiresAt).run();
 
-      // Update server peers_count
-      await c.env.DB.prepare("UPDATE servers SET peers_count = peers_count + 1 WHERE id = ?").bind(serverId).run();
+      // Update node users_count
+      await c.env.DB.prepare("UPDATE nodes SET users_count = users_count + 1 WHERE id = ?").bind(nodeId).run();
     }
 
     const baseUrl = new URL(c.req.url).origin;
 
+    const vlessUri = buildVlessUri({
+      uuid: userUUID,
+      host: nodeHost,
+      port: nodePort,
+      name: nodeName,
+      transport: "tcp",
+      security: "reality",
+      realityPublicKey: nodePubkey,
+      realityShortId: nodeShortId,
+      realitySni: nodeSni
+    });
+
     return c.json({
       success: true,
-      message: "اشتراک وایرگارد با موفقیت ایجاد شد.",
+      message: "اشتراک VLESS با موفقیت ایجاد شد.",
       token: token,
+      uuid: userUUID,
+      vless_uri: vlessUri,
       subscription_url: `${baseUrl}/api/v1/sub/${token}`,
-      conf_url: `${baseUrl}/api/v1/sub/${token}`,
-      client_address: clientAddress,
-      server_id: serverId,
-      server_name: serverName,
+      node_id: nodeId,
+      node_name: nodeName,
+      traffic_limit_bytes: trafficLimit,
       created_at: now,
       expires_at: expiresAt
     });
@@ -292,157 +304,175 @@ app.post('/api/v1/provision', async (c) => {
   }
 });
 
-// GET /api/v1/sub/:token (Returns a real valid WireGuard .conf)
+// GET /api/v1/sub/:token (Returns standard VLESS URI or JSON config)
 app.get('/api/v1/sub/:token', async (c) => {
   const token = c.req.param('token');
-  const modeParam = c.req.query('mode') || 'full'; // 'split' or 'full'
-  const portParam = c.req.query('port') ? parseInt(c.req.query('port')) : null;
-  const mtuParam = c.req.query('mtu') ? parseInt(c.req.query('mtu')) : null;
+  const format = c.req.query('format') || 'vless'; // 'vless' or 'json'
 
   try {
     let sub = null;
-    let server = null;
-    let iranCidrsList = IRAN_CIDRS;
+    let user = null;
+    let node = null;
 
     if (c.env && c.env.DB) {
       sub = await c.env.DB.prepare("SELECT * FROM subscriptions WHERE token = ?").bind(token).first();
       if (!sub) {
-        return c.text("# خطا: اشتراک یافت نشد یا منقضی شده است.\n# Token not found or expired.", 404);
+        return c.text("# Error: Subscription token not found or expired.", 404);
       }
 
-      server = await c.env.DB.prepare("SELECT * FROM servers WHERE id = ?").bind(sub.server_id).first();
-
-      // Read Iran CIDRs from database config if available
-      const cidrRecord = await c.env.DB.prepare("SELECT value FROM configs WHERE key = 'iran_cidrs'").first();
-      if (cidrRecord && cidrRecord.value) {
-        try {
-          iranCidrsList = JSON.parse(cidrRecord.value);
-        } catch (e) {}
+      user = await c.env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(sub.user_id).first();
+      if (!user || user.status !== 'active' || (user.expires_at > 0 && Date.now() > user.expires_at)) {
+        return c.text("# Error: User account is inactive or expired.", 403);
       }
+
+      node = await c.env.DB.prepare("SELECT * FROM nodes WHERE id = ?").bind(sub.node_id).first();
     } else {
-      // Fallback demo config
-      const kp = generateWireGuardKeyPair();
-      sub = {
-        client_private_key: kp.privateKey,
-        client_public_key: kp.publicKey,
-        client_address: "10.66.1.2/32",
-        preshared_key: generatePresharedKey()
-      };
-      server = {
+      user = { uuid: generateUUID(), username: "guest" };
+      node = {
+        name: "آلمان - فرانکفورت (Hetzner)",
         host: "de1.vpprv1.net",
         port: 443,
-        public_key: generateWireGuardKeyPair().publicKey
+        reality_public_key: "kQ9bU1wX8z7yA6v5c4b3a2Z1Y0X9w8V7u6T5s4R3q2P",
+        reality_short_id: "a1b2c3d4",
+        reality_server_name: "www.microsoft.com"
       };
     }
 
-    const host = server ? server.host : "de1.vpprv1.net";
-    const port = portParam || (server ? server.port : 443);
-    const serverPubKey = server ? server.public_key : "dHJhbnNwYXJlbnRfcHVibGljX2tleV9leGFtcGxlMTIz=";
+    const host = node ? node.host : "de1.vpprv1.net";
+    const port = node ? node.port : 443;
+    const nodeName = node ? node.name : "VPPRV1-Node";
 
-    // Calculate split allowed IPs if requested
-    let customAllowedIPs = null;
-    if (modeParam === 'split') {
-      customAllowedIPs = calculateSplitAllowedIPs(iranCidrsList);
+    if (format === 'json') {
+      const clientJson = buildXrayClientJson({
+        uuid: user.uuid,
+        host: host,
+        port: port,
+        transport: "tcp",
+        security: "reality",
+        realityPublicKey: node ? node.reality_public_key : "",
+        realityShortId: node ? node.reality_short_id : "",
+        realitySni: node ? node.reality_server_name : "www.microsoft.com"
+      });
+      return c.json(clientJson);
     }
 
-    const wgConfText = buildWireGuardConfig({
-      clientPrivateKey: sub.client_private_key,
-      clientAddress: sub.client_address,
-      dns: "1.1.1.1, 1.0.0.1",
-      serverPublicKey: serverPubKey,
-      presharedKey: sub.preshared_key,
-      serverHost: host,
-      serverPort: port,
-      mode: modeParam,
-      customAllowedIPs: customAllowedIPs,
-      mtu: mtuParam
+    const vlessUri = buildVlessUri({
+      uuid: user.uuid,
+      host: host,
+      port: port,
+      name: nodeName,
+      transport: "tcp",
+      security: "reality",
+      realityPublicKey: node ? node.reality_public_key : "",
+      realityShortId: node ? node.reality_short_id : "",
+      realitySni: node ? node.reality_server_name : "www.microsoft.com"
     });
 
     c.header('Content-Type', 'text/plain; charset=utf-8');
-    c.header('Content-Disposition', `attachment; filename="vpprv1-${token.substring(0, 10)}.conf"`);
-    return c.text(wgConfText);
+    return c.text(vlessUri);
   } catch (err) {
     return c.text(`# Error: ${err.message}`, 500);
   }
 });
 
 // -------------------------------------------------------------
-// NODE AGENT SYNC & REPORT APIS
+// NODE AGENT SYNC & REPORT APIS (Xray Core)
 // -------------------------------------------------------------
 
-// Helper to authenticate Agent token timing-safely
 async function authenticateAgent(c) {
   const authHeader = c.req.header('Authorization') || '';
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
-  const serverId = c.req.header('X-Server-Id') || c.req.query('server_id');
+  const nodeId = c.req.header('X-Node-Id') || c.req.header('X-Server-Id') || c.req.query('node_id') || c.req.query('server_id');
 
   if (!token || !c.env || !c.env.DB) return null;
 
-  let server;
-  if (serverId) {
-    server = await c.env.DB.prepare("SELECT * FROM servers WHERE id = ?").bind(serverId).first();
+  let node;
+  if (nodeId) {
+    node = await c.env.DB.prepare("SELECT * FROM nodes WHERE id = ?").bind(nodeId).first();
   } else {
-    // Match by token
-    server = await c.env.DB.prepare("SELECT * FROM servers WHERE agent_token = ?").bind(token).first();
+    node = await c.env.DB.prepare("SELECT * FROM nodes WHERE agent_token = ?").bind(token).first();
   }
 
-  if (server && timingSafeEqual(server.agent_token, token)) {
-    return server;
+  if (node && timingSafeEqual(node.agent_token, token)) {
+    return node;
   }
   return null;
 }
 
-// POST /api/agent/sync (Node Agent requests active peers)
+// POST /api/agent/sync (Node Agent requests active Xray users and full config)
 app.post('/api/agent/sync', async (c) => {
   try {
-    const server = await authenticateAgent(c);
-    if (!server) {
+    const node = await authenticateAgent(c);
+    if (!node) {
       return c.json({ success: false, error: "Unauthorized Node Agent Token" }, 401);
     }
 
-    // Get active peers for this server
-    const peersRes = await c.env.DB.prepare(`
-      SELECT id, public_key, preshared_key, allowed_ips, status 
-      FROM peers 
-      WHERE server_id = ? AND status = 'active'
-    `).bind(server.id).all();
+    // Get all active, non-expired users
+    const now = Date.now();
+    const usersRes = await c.env.DB.prepare(`
+      SELECT id, username, email, uuid, traffic_limit_bytes, traffic_used_bytes 
+      FROM users 
+      WHERE status = 'active' AND (expires_at = 0 OR expires_at > ?)
+    `).bind(now).all();
+
+    const activeUsers = usersRes.results || [];
+
+    // Build complete Xray server configuration for this node
+    const xrayServerConfig = buildXrayServerInboundConfig({
+      node: node,
+      activeUsers: activeUsers
+    });
 
     return c.json({
       success: true,
-      server_id: server.id,
+      node_id: node.id,
       timestamp: Date.now(),
-      peers: peersRes.results || []
+      users_count: activeUsers.length,
+      users: activeUsers,
+      xray_config: xrayServerConfig
     });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);
   }
 });
 
-// POST /api/agent/report (Node Agent reports telemetry & heartbeat)
+// POST /api/agent/report (Node Agent reports telemetry, load, traffic usage)
 app.post('/api/agent/report', async (c) => {
   try {
-    const server = await authenticateAgent(c);
-    if (!server) {
+    const node = await authenticateAgent(c);
+    if (!node) {
       return c.json({ success: false, error: "Unauthorized Node Agent Token" }, 401);
     }
 
     const body = await c.req.json();
     const load = typeof body.load === 'number' ? Math.round(body.load) : 0;
     const latency = typeof body.latency === 'number' ? Math.round(body.latency) : 0;
-    const peersCount = typeof body.peers_count === 'number' ? body.peers_count : 0;
+    const usersCount = typeof body.users_count === 'number' ? body.users_count : 0;
+    const userTrafficMap = body.user_traffic || {}; // { "uuid": bytes }
     const now = Date.now();
 
-    // Update server table
+    // Update node status
     await c.env.DB.prepare(`
-      UPDATE servers 
-      SET status = 'online', load = ?, latency = ?, peers_count = ?, last_heartbeat = ? 
+      UPDATE nodes 
+      SET status = 'online', load = ?, latency = ?, users_count = ?, last_heartbeat = ? 
       WHERE id = ?
-    `).bind(load, latency, peersCount, now, server.id).run();
+    `).bind(load, latency, usersCount, now, node.id).run();
+
+    // Update user traffic if reported
+    for (const [uuid, bytes] of Object.entries(userTrafficMap)) {
+      if (typeof bytes === 'number' && bytes > 0) {
+        await c.env.DB.prepare(`
+          UPDATE users 
+          SET traffic_used_bytes = traffic_used_bytes + ? 
+          WHERE uuid = ?
+        `).bind(bytes, uuid).run();
+      }
+    }
 
     return c.json({
       success: true,
-      message: "Heartbeat report recorded successfully",
-      server_id: server.id,
+      message: "Xray heartbeat & traffic report recorded successfully",
+      node_id: node.id,
       timestamp: now
     });
   } catch (err) {
@@ -472,7 +502,6 @@ app.post('/api/admin/login', async (c) => {
     }
 
     if (!c.env || !c.env.DB) {
-      // In-memory demo fallback
       if (username === 'admin' && password === 'Admin@VPPRV1#2026') {
         const token = await createSessionToken({ user: 'admin', role: 'admin' }, 'vpprv1_secret_jwt_key_2026');
         return c.json({ success: true, token });
@@ -493,7 +522,6 @@ app.post('/api/admin/login', async (c) => {
     const jwtSecret = c.env.JWT_SECRET || 'vpprv1_secret_jwt_key_2026';
     const token = await createSessionToken({ user: username, role: 'admin' }, jwtSecret);
 
-    // Record login log
     await c.env.DB.prepare("INSERT INTO logs (level, message, ip, created_at) VALUES ('info', ?, ?, ?)")
       .bind(`Admin login successful: ${username}`, clientIP, Date.now()).run();
 
@@ -503,7 +531,6 @@ app.post('/api/admin/login', async (c) => {
   }
 });
 
-// Admin Auth Middleware
 async function requireAdminAuth(c, next) {
   const authHeader = c.req.header('Authorization') || '';
   const token = authHeader.replace(/^Bearer\s+/i, '').trim();
@@ -527,48 +554,49 @@ async function requireAdminAuth(c, next) {
 app.get('/api/admin/dashboard', requireAdminAuth, async (c) => {
   try {
     if (!c.env || !c.env.DB) {
-      return c.json({ totalServers: 0, onlineServers: 0, totalSubs: 0, totalPeers: 0, servers: [] });
+      return c.json({ totalNodes: 0, onlineNodes: 0, totalUsers: 0, activeUsers: 0, nodes: [] });
     }
 
-    const serversRes = await c.env.DB.prepare("SELECT * FROM servers").all();
-    const subsCount = await c.env.DB.prepare("SELECT COUNT(*) as count FROM subscriptions").first();
-    const peersCount = await c.env.DB.prepare("SELECT COUNT(*) as count FROM peers WHERE status = 'active'").first();
+    const nodesRes = await c.env.DB.prepare("SELECT * FROM nodes").all();
+    const usersCount = await c.env.DB.prepare("SELECT COUNT(*) as count FROM users").first();
+    const activeUsersCount = await c.env.DB.prepare("SELECT COUNT(*) as count FROM users WHERE status = 'active'").first();
 
-    const servers = serversRes.results || [];
-    const onlineCount = servers.filter(s => s.status === 'online').length;
+    const nodes = nodesRes.results || [];
+    const onlineCount = nodes.filter(n => n.status === 'online').length;
 
     return c.json({
       success: true,
-      totalServers: servers.length,
-      onlineServers: onlineCount,
-      totalSubs: subsCount ? subsCount.count : 0,
-      totalPeers: peersCount ? peersCount.count : 0,
-      servers: servers
+      totalNodes: nodes.length,
+      onlineNodes: onlineCount,
+      totalUsers: usersCount ? usersCount.count : 0,
+      activeUsers: activeUsersCount ? activeUsersCount.count : 0,
+      nodes: nodes
     });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);
   }
 });
 
-// GET /api/admin/peers
-app.get('/api/admin/peers', requireAdminAuth, async (c) => {
+// GET /api/admin/users
+app.get('/api/admin/users', requireAdminAuth, async (c) => {
   try {
-    if (!c.env || !c.env.DB) return c.json({ peers: [] });
-    const res = await c.env.DB.prepare("SELECT * FROM peers ORDER BY created_at DESC LIMIT 100").all();
-    return c.json({ success: true, peers: res.results || [] });
+    if (!c.env || !c.env.DB) return c.json({ users: [] });
+    const res = await c.env.DB.prepare("SELECT * FROM users ORDER BY created_at DESC LIMIT 100").all();
+    return c.json({ success: true, users: res.results || [] });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);
   }
 });
 
-// DELETE /api/admin/peers/:id
-app.delete('/api/admin/peers/:id', requireAdminAuth, async (c) => {
-  const id = c.req.param('id');
+// POST /api/admin/users/:id/status (Enable/Disable User)
+app.post('/api/admin/users/:id/status', requireAdminAuth, async (c) => {
+  const userId = c.req.param('id');
   try {
+    const { status } = await c.req.json();
     if (c.env && c.env.DB) {
-      await c.env.DB.prepare("DELETE FROM peers WHERE id = ?").bind(id).run();
+      await c.env.DB.prepare("UPDATE users SET status = ? WHERE id = ?").bind(status, userId).run();
     }
-    return c.json({ success: true, message: `Peer ${id} removed successfully` });
+    return c.json({ success: true, message: `User ${userId} status updated to ${status}` });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);
   }
@@ -578,44 +606,8 @@ app.delete('/api/admin/peers/:id', requireAdminAuth, async (c) => {
 app.get('/api/admin/subscriptions', requireAdminAuth, async (c) => {
   try {
     if (!c.env || !c.env.DB) return c.json({ subscriptions: [] });
-    const res = await c.env.DB.prepare("SELECT token, user_id, server_id, client_address, mode, is_active, created_at, expires_at FROM subscriptions ORDER BY created_at DESC LIMIT 100").all();
+    const res = await c.env.DB.prepare("SELECT * FROM subscriptions ORDER BY created_at DESC LIMIT 100").all();
     return c.json({ success: true, subscriptions: res.results || [] });
-  } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
-  }
-});
-
-// GET /api/admin/cidrs
-app.get('/api/admin/cidrs', requireAdminAuth, async (c) => {
-  try {
-    let cidrs = IRAN_CIDRS;
-    if (c.env && c.env.DB) {
-      const rec = await c.env.DB.prepare("SELECT value FROM configs WHERE key = 'iran_cidrs'").first();
-      if (rec && rec.value) {
-        cidrs = JSON.parse(rec.value);
-      }
-    }
-    return c.json({ success: true, cidrs });
-  } catch (err) {
-    return c.json({ success: false, error: err.message }, 500);
-  }
-});
-
-// POST /api/admin/cidrs
-app.post('/api/admin/cidrs', requireAdminAuth, async (c) => {
-  try {
-    const { cidrs } = await c.req.json();
-    if (!Array.isArray(cidrs)) {
-      return c.json({ success: false, error: "CIDRs must be an array of strings" }, 400);
-    }
-    if (c.env && c.env.DB) {
-      await c.env.DB.prepare(`
-        INSERT INTO configs (key, value, updated_at) 
-        VALUES ('iran_cidrs', ?, ?)
-        ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?
-      `).bind(JSON.stringify(cidrs), Date.now(), JSON.stringify(cidrs), Date.now()).run();
-    }
-    return c.json({ success: true, message: "Iran CIDRs updated successfully" });
   } catch (err) {
     return c.json({ success: false, error: err.message }, 500);
   }

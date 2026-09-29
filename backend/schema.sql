@@ -1,19 +1,26 @@
--- VPPRV1 D1 Initial Schema
+-- VPPRV1 D1 Schema for Xray Core & VLESS Architecture
 
-CREATE TABLE IF NOT EXISTS servers (
+CREATE TABLE IF NOT EXISTS nodes (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   country TEXT NOT NULL,
   flag TEXT NOT NULL,
+  provider TEXT NOT NULL DEFAULT 'Hetzner',
   host TEXT NOT NULL,
   port INTEGER NOT NULL DEFAULT 443,
-  public_key TEXT NOT NULL,
-  preshared_key TEXT,
-  endpoint_ip TEXT,
+  ws_port INTEGER NOT NULL DEFAULT 80,
+  protocol TEXT NOT NULL DEFAULT 'vless',
+  transport TEXT NOT NULL DEFAULT 'tcp',
+  security TEXT NOT NULL DEFAULT 'reality',
+  reality_public_key TEXT,
+  reality_private_key TEXT,
+  reality_short_id TEXT,
+  reality_server_name TEXT,
+  ws_path TEXT DEFAULT '/vpprv1-ws',
   status TEXT NOT NULL DEFAULT 'offline',
   load INTEGER NOT NULL DEFAULT 0,
   latency INTEGER NOT NULL DEFAULT 0,
-  peers_count INTEGER NOT NULL DEFAULT 0,
+  users_count INTEGER NOT NULL DEFAULT 0,
   agent_token TEXT NOT NULL,
   last_heartbeat INTEGER DEFAULT 0,
   created_at INTEGER NOT NULL
@@ -23,37 +30,41 @@ CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   username TEXT NOT NULL UNIQUE,
   email TEXT,
-  role TEXT NOT NULL DEFAULT 'user',
-  created_at INTEGER NOT NULL
+  uuid TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'active',
+  traffic_limit_bytes INTEGER NOT NULL DEFAULT 0,
+  traffic_used_bytes INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   token TEXT PRIMARY KEY,
-  user_id TEXT,
+  user_id TEXT NOT NULL,
   created_ip TEXT,
-  server_id TEXT,
-  client_private_key TEXT NOT NULL,
-  client_public_key TEXT NOT NULL,
-  client_address TEXT NOT NULL,
-  preshared_key TEXT,
-  mode TEXT NOT NULL DEFAULT 'full',
+  node_id TEXT,
+  protocol TEXT NOT NULL DEFAULT 'vless',
+  transport TEXT NOT NULL DEFAULT 'tcp',
+  security TEXT NOT NULL DEFAULT 'reality',
   is_active INTEGER NOT NULL DEFAULT 1,
   created_at INTEGER NOT NULL,
   expires_at INTEGER NOT NULL,
-  FOREIGN KEY (server_id) REFERENCES servers(id)
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (node_id) REFERENCES nodes(id)
 );
 
-CREATE TABLE IF NOT EXISTS peers (
+CREATE TABLE IF NOT EXISTS inbounds (
   id TEXT PRIMARY KEY,
-  server_id TEXT NOT NULL,
-  subscription_token TEXT NOT NULL,
-  public_key TEXT NOT NULL,
-  preshared_key TEXT,
-  allowed_ips TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'active',
+  node_id TEXT NOT NULL,
+  tag TEXT NOT NULL,
+  protocol TEXT NOT NULL DEFAULT 'vless',
+  port INTEGER NOT NULL DEFAULT 443,
+  network TEXT NOT NULL DEFAULT 'tcp',
+  security TEXT NOT NULL DEFAULT 'reality',
+  server_name TEXT,
+  is_active INTEGER NOT NULL DEFAULT 1,
   created_at INTEGER NOT NULL,
-  FOREIGN KEY (server_id) REFERENCES servers(id),
-  FOREIGN KEY (subscription_token) REFERENCES subscriptions(token)
+  FOREIGN KEY (node_id) REFERENCES nodes(id)
 );
 
 CREATE TABLE IF NOT EXISTS configs (

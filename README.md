@@ -1,12 +1,12 @@
-# VPPRV1 - پلتفرم جامع و امن شبکه WireGuard
+# VPPRV1 - سامانه جامع مدیریت و توزیع Xray Core & VLESS
 
 <div align="center">
 
-![VPPRV1 Banner](https://img.shields.io/badge/VPPRV1-WireGuard%20X25519-10b981?style=for-the-badge&logo=wireguard)
+![VPPRV1 Banner](https://img.shields.io/badge/VPPRV1-Xray%20Core%20%7C%20VLESS-10b981?style=for-the-badge)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers%20%2B%20D1-f38020?style=for-the-badge&logo=cloudflare)
-![Platforms](https://img.shields.io/badge/Clients-Windows%20%7C%20Android%20%7C%20Linux-06b6d4?style=for-the-badge)
+![VPS Providers](https://img.shields.io/badge/VPS-Hetzner%20%7C%20Vultr%20%7C%20OVH-06b6d4?style=for-the-badge)
 
-**سامانه جامع، واقعی و پرسرعت مدیریت و توزیع تونل‌های امن WireGuard با الگوریتم X25519 و تفکیک ترافیک نت ملی (Split Tunneling)**
+**سامانه جامع، واقعی و پرسرعت مدیریت و توزیع کانفیگ‌های امن VLESS Reality و WebSocket مبتنی بر هسته Xray Core**
 
 [امکانات و قابلیت‌ها](docs/FEATURES.md) • [مستندات API](docs/API.md) • [راهنمای استقرار](docs/DEPLOY.md)
 
@@ -14,36 +14,27 @@
 
 ---
 
-## 🚀 معرفی پروژه
+## 🚀 معماری سیستم
 
-پروژه **VPPRV1** یک پلتفرم کامل و آماده بهره‌برداری جهت ایجاد، مدیریت و مسیریابی ارتباطات امن WireGuard در لبه شبکه ابری است. این پروژه از هسته کریپتوگرافی واقعی **Curve25519 (X25519)**، کلیدهای مقاوم در برابر کوانتوم **PresharedKey (PSK)**، و تفکیک ترافیک داخلی ایران با پورت UDP 443 و MTU 1330 بهره می‌برد.
+پروژه **VPPRV1** یک پلتفرم کامل و آماده بهره‌برداری جهت ایجاد، مدیریت و مسیریابی ارتباطات امن VLESS با تفکیک وظایف زیر است:
 
-### 🌟 ساختار پروژه
-```text
-VPPRV1/
-├── backend/            # هسته Serverless کلودفلر (Cloudflare Workers + D1 Database + Hono)
-│   ├── src/            # منطق برنامه، روت‌ها، تمپلیت‌های RTL فارسی، کریپتوگرافی و تولید .conf
-│   ├── migrations/     # اسکریپت‌های D1 Schema Migration
-│   └── tests/          # آزمون‌های جامع واحد (Unit Tests)
-├── node-agent/         # ایجنت پایتونی سرورهای لینوکس (همگام‌ساز Peerها، فایروال، NAT و مانیتورینگ)
-├── clients/
-│   ├── windows/        # کلاینت دسکتاپ ویندوز (.NET 8 + Avalonia UI + اسکریپت NSIS)
-│   ├── android/        # کلاینت موبایل اندروید (Kotlin + Android VpnService + ساخت APK)
-│   └── linux/          # کلاینت خط فرمان لینوکس (CLI فارسی + اسکریپت نصب یک‌خطی)
-├── docs/               # مستندات کامل ۵۰ قابلیت، مستندات API و اسناد توسعه
-└── .github/workflows/  # خطوط لوله CI/CD خودکار تست، بیلد و استقرار
-```
+- **Cloudflare Workers:** به عنوان Backend و API سرورلس جهت صدور اشتراک، احراز هویت ادمین و ارائه وب‌سایت.
+- **Cloudflare D1:** پایگاه داده توزیع‌شده جهت نگهداری اطلاعات نودها، کاربران، ترافیک و توکن‌ها.
+- **VPSهای واقعی (Hetzner, Vultr, OVH):** اجرای واقعی هسته **Xray Core** و سرویس‌دهی Inboundهای VLESS Reality و VLESS WebSocket.
+- **Node Agent:** سرویس پایتونی مقیم روی هر VPS جهت همگام‌سازی لحظه‌ای کاربران فعال، اعمال پیکربندی Inbound و گزارش هارت‌بیت و مصرف ترافیک.
+- **Clientها:** کلاینت ویندوز (.NET 8 Avalonia)، اپلیکیشن اندروید (Kotlin VpnService)، خط فرمان لینوکس (CLI) و تمامی کلاینت‌های استاندارد v2ray / Xray.
 
 ---
 
 ## ⚙️ ویژگی‌های کلیدی
 
-- 🔑 **تولید کلید واقعی X25519 & PSK:** تولید امن جفت‌کلیدهای استاندارد وایرگارد و کلید اشتراکی ۳۲ بایتی.
-- 🇮🇷 **حالت نت ملی (Split Tunneling):** مسیریابی تفکیکی ترافیک با پارامتر `?mode=split&port=443`؛ سایت‌های ایرانی مستقیماً از اینترنت کاربر باز شده و ترافیک بین‌الملل رمزگذاری می‌شود.
-- 🤖 **نود ایجنت هوشمند لینوکس:** نصب خودکار وابستگی‌ها، اعمال `net.ipv4.ip_forward=1`، قوانین NAT Masquerade در فایروال و ارسال هارت‌بیت هر ۶۰ ثانیه.
+- ⚡ **پروتکل VLESS + TCP Reality:** شبیه‌سازی امن TLS با هویت استاندارد سایت‌های جهانی و عبور پایدار از فایروال.
+- 🌐 **پشتیبانی از VLESS + WebSocket:** پایداری و سازگاری با انواع شبکه‌ها.
+- 📊 **مدیریت حجم مصرفی و انقضا:** پایش ترافیک آپلود/دانلود و سقف مصرف مجاز برای هر کاربر.
+- 🚫 **فعال و غیرفعال‌سازی آنی کاربر:** قطع فوری دسترسی در تمام نودها به صورت خودکار.
+- 🔄 **همگام‌سازی خودکار (Sync Engine):** اعمال تغییرات کاربران روی Xray بدون قطعی سرویس.
 - 🛡️ **امنیت سازمانی:** هش کلمه عبور با PBKDF2 (با ۱۰۰,۰۰۰ دور)، توکن‌های نشست HMAC-SHA256، مقایسه Timing-Safe و محافظت کامل در برابر SQLi، XSS و Brute-Force.
-- 🎛️ **پنل مدیریت Dark Premium:** پنل کاملاً فارسی و راست‌چین (RTL) با مانیتورینگ زنده نودها، Peerها، اشتراک‌ها، لاگ‌ها و ویرایشگر آنلاین رنج‌های CIDR ایران.
-- 🖥️ **کلاینت‌های بومی:** ویندوز (.NET 8 Avalonia)، اندروید (Kotlin VpnService) و لینوکس (CLI فارسی).
+- 🎛️ **پنل مدیریت Dark Premium:** پنل کاملاً فارسی و راست‌چین (RTL) با مانیتورینگ زنده نودها، کاربران، اشتراک‌ها و لاگ‌ها.
 
 ---
 
@@ -59,27 +50,27 @@ npm run dev
 
 ### ۲. نصب ایجنت روی سرور VPS لینوکس
 ```bash
-curl -sSL https://raw.githubusercontent.com/amingangmanatgh2-hash/VPPRV1/main/node-agent/install.sh | sudo bash -s -- --server-id de-fra-1 --token <YOUR_NODE_TOKEN> --endpoint https://<WORKER_URL>
+curl -sSL https://raw.githubusercontent.com/amingangmanatgh2-hash/VPPRV1/main/node-agent/install.sh | sudo bash -s -- --node-id hetzner-de-1 --token <YOUR_NODE_TOKEN> --endpoint https://<WORKER_URL>
 ```
 
-### ۳. نصب و اجرای کلاینت لینوکس
+### ۳. استفاده از کلاینت لینوکس
 ```bash
 curl -sSL https://raw.githubusercontent.com/amingangmanatgh2-hash/VPPRV1/main/clients/linux/install.sh | sudo bash
 
-# برقراری اتصال در حالت عادی:
-sudo vpprv1 connect
+# برقراری اتصال VLESS:
+vpprv1 connect
 
-# برقراری اتصال در حالت نت ملی (Split Tunnel):
-sudo vpprv1 connect --melli
+# مشاهده وضعیت:
+vpprv1 status
 ```
 
 ---
 
 ## 📱 راهنمای نصب دستی کلاینت اندروید (APK)
 
-هنگام نصب فایل `VPPRV1.apk` به صورت دستی در دستگاه‌های اندرویدی:
-1. در صورتی که با پیام *«Install Unknown Apps»* مواجه شدید، به مرورگر یا فایل منیجر خود مجوز نصب برنامه از منابع ناشناس را بدهید.
-2. به دلیل استفاده از سرویس سیستمی `VpnService`، در اولین اتصال سیستم‌عامل اندروید پنجره تأیید مجوز اتصال VPN را نمایش می‌دهد که باید گزینه **OK / تأیید** را انتخاب نمایید.
+هنگام نصب فایل `VPPRV1.apk` به صورت دستی:
+1. در صورت نمایش هشدار نصب از منابع ناشناس، مجوز مربوطه را فعال نمایید.
+2. در اولین اتصال، پیام سیستم‌عامل اندروید برای اعطای دسترسی `VpnService` را تأیید فرمایید.
 
 ---
 

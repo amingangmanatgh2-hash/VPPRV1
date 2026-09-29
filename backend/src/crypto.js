@@ -1,61 +1,5 @@
-// VPPRV1 Cryptographic Utilities
-// Standard WireGuard X25519 Curve and WebCrypto PBKDF2/HMAC implementations
-
-import { x25519 } from '@noble/curves/ed25519';
-
-/**
- * Convert Uint8Array to base64 string
- */
-export function toBase64(bytes) {
-  let binary = '';
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return btoa(binary);
-}
-
-/**
- * Convert base64 string to Uint8Array
- */
-export function fromBase64(base64) {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-}
-
-/**
- * Generate a cryptographically secure WireGuard X25519 Keypair
- * Returns { privateKey: base64, publicKey: base64 }
- */
-export function generateWireGuardKeyPair() {
-  const privateBytes = x25519.utils.randomPrivateKey();
-  const publicBytes = x25519.getPublicKey(privateBytes);
-  return {
-    privateKey: toBase64(privateBytes),
-    publicKey: toBase64(publicBytes)
-  };
-}
-
-/**
- * Derive WireGuard X25519 Public Key from Private Key (base64)
- */
-export function getPublicKeyFromPrivate(privateKeyBase64) {
-  const privateBytes = fromBase64(privateKeyBase64);
-  const publicBytes = x25519.getPublicKey(privateBytes);
-  return toBase64(publicBytes);
-}
-
-/**
- * Generate a 32-byte PresharedKey for WireGuard post-quantum resistance
- */
-export function generatePresharedKey() {
-  const randomBytes = crypto.getRandomValues(new Uint8Array(32));
-  return toBase64(randomBytes);
-}
+// VPPRV1 Cryptographic Utilities & Token Generation
+// PBKDF2 Password Hashing, HMAC-SHA256 Sessions, Timing-Safe string compare, UUID generation
 
 /**
  * Timing-safe string comparison to mitigate side-channel timing attacks
@@ -75,6 +19,21 @@ export function timingSafeEqual(a, b) {
     diff |= aBuf[i] ^ bBuf[i];
   }
   return diff === 0;
+}
+
+/**
+ * Generate standard UUID v4 for Xray VLESS clients
+ */
+export function generateUUID() {
+  return crypto.randomUUID();
+}
+
+/**
+ * Generate 8-character hex Short ID for Reality
+ */
+export function generateShortId() {
+  const bytes = crypto.getRandomValues(new Uint8Array(4));
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 /**
@@ -145,7 +104,13 @@ export async function createSessionToken(data, secret) {
   );
 
   const sigBytes = await crypto.subtle.sign('HMAC', key, enc.encode(b64Payload));
-  const sigB64 = toBase64(new Uint8Array(sigBytes));
+  let binary = '';
+  const len = sigBytes.byteLength;
+  const bytes = new Uint8Array(sigBytes);
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const sigB64 = btoa(binary);
 
   return `${b64Payload}.${sigB64}`;
 }
@@ -168,7 +133,12 @@ export async function verifySessionToken(token, secret) {
       ['verify']
     );
 
-    const sigBytes = fromBase64(sigB64);
+    const binary = atob(sigB64);
+    const sigBytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      sigBytes[i] = binary.charCodeAt(i);
+    }
+
     const valid = await crypto.subtle.verify('HMAC', key, sigBytes, enc.encode(b64Payload));
     if (!valid) return null;
 

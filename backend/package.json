@@ -1,7 +1,7 @@
 {
   "name": "vpprv1-backend",
   "version": "1.0.0",
-  "description": "VPPRV1 Cloudflare Workers Backend with D1 & WireGuard X25519",
+  "description": "VPPRV1 Cloudflare Workers Backend with D1 & Xray Core / VLESS",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -10,7 +10,6 @@
     "deploy": "wrangler deploy"
   },
   "dependencies": {
-    "@noble/curves": "^1.4.0",
     "hono": "^4.6.0"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-// VPPRV1 Persian RTL Modern Web UI Template Generator
+// VPPRV1 Persian RTL Web UI Template Generator
 
 export function renderPage({ title, currentPath, content }) {
   return `<!DOCTYPE html>
@@ -6,7 +6,7 @@ export function renderPage({ title, currentPath, content }) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title} | VPPRV1 - پلتفرم امن WireGuard</title>
+  <title>${title} | VPPRV1 - سامانه اتصال امن Xray Core & VLESS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -303,12 +303,12 @@ export function renderPage({ title, currentPath, content }) {
     <div class="nav-container">
       <a href="/" class="logo-container">
         <span class="logo-badge">VPPRV1</span>
-        <span>سامانه امن وی‌پی‌ان</span>
+        <span>سامانه امن Xray Core & VLESS</span>
       </a>
       <nav class="nav-links">
         <a href="/" class="${currentPath === '/' ? 'active' : ''}">صفحه اصلی</a>
         <a href="/features" class="${currentPath === '/features' ? 'active' : ''}">امکانات و قابلیت‌ها</a>
-        <a href="/servers" class="${currentPath === '/servers' ? 'active' : ''}">وضعیت سرورها</a>
+        <a href="/servers" class="${currentPath === '/servers' ? 'active' : ''}">وضعیت سرورها (Nodes)</a>
         <a href="/downloads" class="${currentPath === '/downloads' ? 'active' : ''}">دانلود کلاینت‌ها</a>
         <a href="/guide" class="${currentPath === '/guide' ? 'active' : ''}">راهنمای اتصال</a>
         <a href="/about" class="${currentPath === '/about' ? 'active' : ''}">درباره ما</a>
@@ -316,7 +316,7 @@ export function renderPage({ title, currentPath, content }) {
       <div class="nav-cta">
         <a href="/panel" class="btn btn-outline">پنل مدیریت</a>
         <button id="quick-connect-btn" onclick="quickProvision()" class="btn btn-primary">
-          <span class="pulse-dot"></span> دریافت فوری اتصال
+          <span class="pulse-dot"></span> دریافت کانفیگ VLESS
         </button>
       </div>
     </div>
@@ -331,10 +331,10 @@ export function renderPage({ title, currentPath, content }) {
       <div class="footer-col" style="max-width: 320px;">
         <div class="logo-container" style="margin-bottom: 0.75rem;">
           <span class="logo-badge">VPPRV1</span>
-          <span>سامانه نسل جدید WireGuard</span>
+          <span>سامانه نسل جدید Xray Core</span>
         </div>
         <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.7;">
-          پلتفرم پیشرفته مدیریت و توزیع اتصال امن WireGuard با الگوریتم مدرن X25519، رمزگذاری چندلایه و قابلیت مسیریابی تفکیکی نت ملی (Split Tunneling).
+          پلتفرم پیشرفته مدیریت، توزیع و همگام‌سازی کانفیگ‌های VLESS + TCP Reality و VLESS + WebSocket روی سرورهای ابری Hetzner، Vultr و OVH.
         </p>
       </div>
       <div class="footer-col">
@@ -349,7 +349,7 @@ export function renderPage({ title, currentPath, content }) {
       <div class="footer-col">
         <h4>پشتیبانی و اسناد</h4>
         <ul>
-          <li><a href="/guide">راهنمای تصویری اتصال</a></li>
+          <li><a href="/guide">راهنمای اتصال VLESS</a></li>
           <li><a href="/privacy">سیاست حریم خصوصی Zero-Log</a></li>
           <li><a href="/terms">شرایط و قوانین استفاده</a></li>
           <li><a href="/panel">ورود به پنل مدیریت</a></li>
@@ -373,7 +373,7 @@ export function renderPage({ title, currentPath, content }) {
     async function quickProvision() {
       const btn = document.getElementById('quick-connect-btn');
       const originalText = btn.innerHTML;
-      btn.innerHTML = 'در حال تولید کانفیگ امن...';
+      btn.innerHTML = 'در حال تولید کانفیگ امن VLESS...';
       btn.disabled = true;
       try {
         const res = await fetch('/api/v1/provision', { method: 'POST' });

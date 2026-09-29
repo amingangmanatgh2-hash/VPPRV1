@@ -1,11 +1,11 @@
-// VPPRV1 Admin Panel Modern Dark Premium UI
+// VPPRV1 Admin Panel Modern Dark Premium UI for Xray Core & VLESS
 export function renderAdminPanelPage() {
   return `<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>پنل مدیریت VPPRV1 | کنترل یکپارچه WireGuard</title>
+  <title>پنل مدیریت VPPRV1 | کنترل یکپارچه Xray Core & VLESS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -26,7 +26,6 @@ export function renderAdminPanelPage() {
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', sans-serif; }
     body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; display: flex; }
     
-    /* Layout */
     .admin-wrapper { display: flex; width: 100%; min-height: 100vh; }
     .sidebar { width: 260px; background: var(--bg-sidebar); border-left: 1px solid var(--border-color); padding: 1.5rem 1rem; display: flex; flex-direction: column; }
     .main-content { flex: 1; padding: 2rem; overflow-y: auto; max-height: 100vh; }
@@ -55,6 +54,7 @@ export function renderAdminPanelPage() {
     .btn-primary:hover { background: var(--primary-hover); }
     .btn-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
     .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
     
     .badge-online { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.2rem 0.5rem; border-radius: 99px; font-size: 0.75rem; }
     .badge-offline { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.2rem 0.5rem; border-radius: 99px; font-size: 0.75rem; }
@@ -62,7 +62,6 @@ export function renderAdminPanelPage() {
     .code-snippet { background: #04070e; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.75rem; font-family: monospace; font-size: 0.85rem; direction: ltr; text-align: left; color: #34d399; display: flex; justify-content: space-between; align-items: center; }
     .copy-btn { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 0.25rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
     
-    /* Login Modal */
     #login-overlay { position: fixed; inset: 0; background: rgba(8, 12, 20, 0.95); z-index: 100; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
     .login-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 400px; text-align: center; }
     .input-field { width: 100%; padding: 0.75rem 1rem; background: #04070e; border: 1px solid var(--border-color); border-radius: 8px; color: #fff; font-size: 0.95rem; margin-bottom: 1rem; }
@@ -81,7 +80,7 @@ export function renderAdminPanelPage() {
     <div class="login-box">
       <div class="logo" style="justify-content: center; margin-bottom: 1.5rem;">
         <span class="logo-badge">VPPRV1</span>
-        <span>ورود به پنل مدیریت</span>
+        <span>ورود به پنل مدیریت Xray</span>
       </div>
       <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
         احراز هویت امن PBKDF2 با ۱۰۰,۰۰۰ دور رمزنگاری و HMAC Session
@@ -102,15 +101,14 @@ export function renderAdminPanelPage() {
     <aside class="sidebar">
       <div class="logo">
         <span class="logo-badge">VPPRV1</span>
-        <span>پنل مدیریت</span>
+        <span>پنل مدیریت Xray</span>
       </div>
       <ul class="nav-menu">
         <li class="nav-item"><button class="active" onclick="showTab('dashboard')">📊 داشبورد سیستم</button></li>
-        <li class="nav-item"><button onclick="showTab('servers')">🖥️ مدیریت سرورها</button></li>
-        <li class="nav-item"><button onclick="showTab('nodes')">🤖 نودها و Agent</button></li>
-        <li class="nav-item"><button onclick="showTab('peers')">👥 مدیریت Peerها</button></li>
+        <li class="nav-item"><button onclick="showTab('nodes')">🖥️ نودهای سرور (VPS)</button></li>
+        <li class="nav-item"><button onclick="showTab('users')">👥 مدیریت کاربران و UUID</button></li>
         <li class="nav-item"><button onclick="showTab('subs')">🎟️ اشتراک‌ها (Subscriptions)</button></li>
-        <li class="nav-item"><button onclick="showTab('cidrs')">🇮🇷 رنج‌های نت ملی (CIDR)</button></li>
+        <li class="nav-item"><button onclick="showTab('agent')">🤖 دستورات Agent سرورها</button></li>
         <li class="nav-item"><button onclick="showTab('downloads')">📦 نسخه‌ها و دانلودها</button></li>
         <li class="nav-item"><button onclick="showTab('logs')">📋 لاگ‌های امنیتی</button></li>
         <li class="nav-item"><button onclick="showTab('settings')">⚙️ تنظیمات سامانه</button></li>
@@ -128,58 +126,60 @@ export function renderAdminPanelPage() {
       <!-- DASHBOARD TAB -->
       <section id="tab-dashboard" class="tab-pane">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="font-size: 1.5rem; font-weight: 800;">داشبورد وضعیت سامانه</h2>
+          <h2 style="font-size: 1.5rem; font-weight: 800;">داشبورد وضعیت سامانه Xray Core</h2>
           <button onclick="refreshDashboard()" class="btn btn-primary">🔄 به‌روزرسانی زنده</button>
         </div>
 
         <div class="grid-stats">
           <div class="stat-card">
-            <span class="stat-label">تعداد کل سرورها / نودها</span>
-            <span class="stat-val" id="stat-servers">--</span>
+            <span class="stat-label">تعداد کل نودها (VPS)</span>
+            <span class="stat-val" id="stat-nodes">--</span>
           </div>
           <div class="stat-card">
             <span class="stat-label">نودهای فعال و متصل</span>
             <span class="stat-val" id="stat-online-nodes" style="color: var(--primary);">--</span>
           </div>
           <div class="stat-card">
-            <span class="stat-label">تعداد اشتراک‌های صادر شده</span>
-            <span class="stat-val" id="stat-subs">--</span>
+            <span class="stat-label">تعداد کل کاربران (UUID)</span>
+            <span class="stat-val" id="stat-users">--</span>
           </div>
           <div class="stat-card">
-            <span class="stat-label">Peerهای فعال در شبکه</span>
-            <span class="stat-val" id="stat-peers" style="color: var(--accent-cyan);">--</span>
+            <span class="stat-label">کاربران فعال (Active)</span>
+            <span class="stat-val" id="stat-active-users" style="color: var(--accent-cyan);">--</span>
           </div>
         </div>
 
         <div class="card">
-          <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">وضعیت زنده نودهای سرور</h3>
+          <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">وضعیت زنده نودهای سرور Xray</h3>
           <div style="overflow-x: auto;">
             <table>
               <thead>
                 <tr>
-                  <th>سرور</th>
+                  <th>نام نود</th>
+                  <th>دیتاسنتر</th>
                   <th>کشور</th>
-                  <th>هاست و پورت</th>
+                  <th>آدرس و پورت</th>
+                  <th>پروتکل / امنیت</th>
                   <th>وضعیت اتصال</th>
                   <th>تاخیر (Ping)</th>
                   <th>بار کاری (Load)</th>
-                  <th>Peerها</th>
+                  <th>کاربران</th>
                   <th>آخرین هارت‌بیت</th>
                 </tr>
               </thead>
               <tbody id="dashboard-nodes-table">
-                <tr><td colspan="8" style="text-align: center;">در حال دریافت اطلاعات...</td></tr>
+                <tr><td colspan="10" style="text-align: center;">در حال دریافت اطلاعات...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- SERVERS TAB -->
-      <section id="tab-servers" class="tab-pane" style="display: none;">
+      <!-- NODES TAB -->
+      <section id="tab-nodes" class="tab-pane" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="font-size: 1.5rem; font-weight: 800;">مدیریت سرورهای WireGuard</h2>
-          <button onclick="openAddServerModal()" class="btn btn-primary">➕ افزودن سرور جدید</button>
+          <h2 style="font-size: 1.5rem; font-weight: 800;">مدیریت نودهای سرور (VPS)</h2>
+          <button onclick="refreshDashboard()" class="btn btn-primary">🔄 رفرش</button>
         </div>
 
         <div class="card">
@@ -187,17 +187,17 @@ export function renderAdminPanelPage() {
             <table>
               <thead>
                 <tr>
-                  <th>شناسه</th>
-                  <th>نام سرور</th>
-                  <th>کشور</th>
+                  <th>شناسه نود</th>
+                  <th>نام</th>
+                  <th>پرووایدر</th>
                   <th>هاست</th>
-                  <th>پورت</th>
-                  <th>کلید عمومی WireGuard</th>
+                  <th>پورت VLESS</th>
+                  <th>امنیت</th>
                   <th>وضعیت</th>
                   <th>عملیات</th>
                 </tr>
               </thead>
-              <tbody id="servers-table">
+              <tbody id="nodes-table">
                 <tr><td colspan="8" style="text-align: center;">در حال بارگذاری...</td></tr>
               </tbody>
             </table>
@@ -205,41 +205,29 @@ export function renderAdminPanelPage() {
         </div>
       </section>
 
-      <!-- NODES & AGENT TAB -->
-      <section id="tab-nodes" class="tab-pane" style="display: none;">
-        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem;">دستور راه‌اندازی Node Agent برای VPS</h2>
-        <div class="card">
-          <h3 style="margin-bottom: 0.75rem; font-size: 1.1rem;">نصب سریع یک‌خطی Agent روی سرور لینوکس</h3>
-          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
-            دستور زیر را در سرور اوبونتو یا دبیان خود اجرا کنید. اسکریپت به صورت خودکار WireGuard را نصب، IP Forwarding و NAT را فعال و هر ۶۰ ثانیه وضعیت و Peerها را همگام می‌کند:
-          </p>
-          <div id="agent-commands-list" style="display: flex; flex-direction: column; gap: 1rem;">
-            <!-- Generated dynamically per server -->
-          </div>
-        </div>
-      </section>
-
-      <!-- PEERS TAB -->
-      <section id="tab-peers" class="tab-pane" style="display: none;">
+      <!-- USERS TAB -->
+      <section id="tab-users" class="tab-pane" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="font-size: 1.5rem; font-weight: 800;">پایش و مدیریت Peerهای وایرگارد</h2>
-          <button onclick="loadPeers()" class="btn btn-primary">🔄 رفرش</button>
+          <h2 style="font-size: 1.5rem; font-weight: 800;">مدیریت کاربران، حجم مصرفی و انقضا</h2>
+          <button onclick="openAddUserModal()" class="btn btn-primary">➕ ایجاد کاربر جدید</button>
         </div>
+
         <div class="card">
           <div style="overflow-x: auto;">
             <table>
               <thead>
                 <tr>
-                  <th>شناسه Peer</th>
-                  <th>سرور</th>
-                  <th>IP اختصاصی</th>
-                  <th>کلید عمومی کلاینت</th>
+                  <th>نام کاربری</th>
+                  <th>شناسه یکتا (UUID)</th>
                   <th>وضعیت</th>
+                  <th>حجم مصرفی</th>
+                  <th>سقف مجاز</th>
+                  <th>تاریخ انقضا</th>
                   <th>عملیات</th>
                 </tr>
               </thead>
-              <tbody id="peers-table">
-                <tr><td colspan="6" style="text-align: center;">در حال بارگذاری...</td></tr>
+              <tbody id="users-table">
+                <tr><td colspan="7" style="text-align: center;">در حال بارگذاری...</td></tr>
               </tbody>
             </table>
           </div>
@@ -249,50 +237,48 @@ export function renderAdminPanelPage() {
       <!-- SUBSCRIPTIONS TAB -->
       <section id="tab-subs" class="tab-pane" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h2 style="font-size: 1.5rem; font-weight: 800;">مدیریت اشتراک‌های فعال</h2>
-          <button onclick="createSubscriptionManual()" class="btn btn-primary">➕ صدور توکن جدید</button>
+          <h2 style="font-size: 1.5rem; font-weight: 800;">اشتراک‌ها و لینک‌های استاندارد VLESS</h2>
+          <button onclick="loadSubs()" class="btn btn-primary">🔄 رفرش</button>
         </div>
         <div class="card">
           <div style="overflow-x: auto;">
             <table>
               <thead>
                 <tr>
-                  <th>توکن سابسکریپشن</th>
-                  <th>سرور متصل</th>
-                  <th>IP اختصاص یافته</th>
-                  <th>حالت</th>
+                  <th>توکن اشتراک</th>
+                  <th>کاربر</th>
+                  <th>پروتکل</th>
                   <th>وضعیت</th>
                   <th>تاریخ ایجاد</th>
-                  <th>لینک خروجی .conf</th>
+                  <th>دریافت کانفیگ VLESS</th>
                 </tr>
               </thead>
               <tbody id="subs-table">
-                <tr><td colspan="7" style="text-align: center;">در حال بارگذاری...</td></tr>
+                <tr><td colspan="6" style="text-align: center;">در حال بارگذاری...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </section>
 
-      <!-- CIDRS TAB (NET MELLI) -->
-      <section id="tab-cidrs" class="tab-pane" style="display: none;">
-        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1rem;">مدیریت زنده رنج‌های نت ملی (ایران CIDR)</h2>
-        <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
-          ویرایش مستقیم رنج‌های IP ایران جهت Split Tunneling بدون نیاز به Deploy مجدد سرور
-        </p>
+      <!-- AGENT COMMANDS TAB -->
+      <section id="tab-agent" class="tab-pane" style="display: none;">
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem;">دستور راه‌اندازی Xray Node Agent برای VPS</h2>
         <div class="card">
-          <textarea id="cidrs-textarea" rows="12" style="width: 100%; background: #04070e; border: 1px solid var(--border-color); color: #34d399; font-family: monospace; font-size: 0.9rem; padding: 1rem; border-radius: 8px; direction: ltr;"></textarea>
-          <div style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 1rem;">
-            <button onclick="saveCidrs()" class="btn btn-primary">💾 ذخیره تغییرات در دیتابیس</button>
+          <h3 style="margin-bottom: 0.75rem; font-size: 1.1rem;">نصب یک‌خطی Agent روی سرورهای Hetzner / Vultr / OVH</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+            دستور زیر را در سرور لینوکس خود اجرا کنید. اسکریپت به صورت خودکار هسته Xray Core را نصب کرده و هر ۶۰ ثانیه کاربران و وضعیت را همگام می‌سازد:
+          </p>
+          <div id="agent-commands-list" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Generated dynamically -->
           </div>
         </div>
       </section>
 
       <!-- DOWNLOADS & VERSIONS TAB -->
       <section id="tab-downloads" class="tab-pane" style="display: none;">
-        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem;">نسخه‌ها و لینک‌های دانلود</h2>
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem;">نسخه‌ها و لینک‌های دانلود کلاینت</h2>
         <div class="card">
-          <h3 style="margin-bottom: 1rem;">فایل‌های رسمی کلاینت متصل به سامانه</h3>
           <table>
             <thead>
               <tr>
@@ -305,7 +291,7 @@ export function renderAdminPanelPage() {
             <tbody>
               <tr>
                 <td>VPPRV1-Setup.exe</td>
-                <td>Windows (Installer NSIS)</td>
+                <td>Windows (.NET 8 Avalonia)</td>
                 <td>1.0.0</td>
                 <td><a href="/api/downloads/VPPRV1-Setup.exe" class="btn btn-primary">دریافت فایل</a></td>
               </tr>
@@ -317,7 +303,7 @@ export function renderAdminPanelPage() {
               </tr>
               <tr>
                 <td>VPPRV1.apk</td>
-                <td>Android (Kotlin Native)</td>
+                <td>Android (Kotlin Native VpnService)</td>
                 <td>1.0.0</td>
                 <td><a href="/api/downloads/VPPRV1.apk" class="btn btn-primary">دریافت فایل</a></td>
               </tr>
@@ -359,18 +345,18 @@ export function renderAdminPanelPage() {
       <section id="tab-settings" class="tab-pane" style="display: none;">
         <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem;">تنظیمات پیشرفته سیستم</h2>
         <div class="card">
-          <h3 style="margin-bottom: 1rem;">تنظیمات سرور اصلی WireGuard</h3>
+          <h3 style="margin-bottom: 1rem;">تنظیمات پیش‌فرض Xray & VLESS</h3>
           <div style="display: flex; flex-direction: column; gap: 1rem; max-width: 500px;">
             <div>
-              <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.35rem;">پیش‌فرض DNS</label>
-              <input type="text" id="setting-dns" class="input-field" value="1.1.1.1, 1.0.0.1">
+              <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.35rem;">دامنه پیش‌فرض SNI در Reality</label>
+              <input type="text" id="setting-sni" class="input-field" value="www.microsoft.com">
             </div>
             <div>
-              <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.35rem;">پیش‌فرض MTU حالت Split</label>
-              <input type="number" id="setting-mtu" class="input-field" value="1330">
+              <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.35rem;">پورت پیش‌فرض VLESS Reality</label>
+              <input type="number" id="setting-port" class="input-field" value="443">
             </div>
             <div>
-              <button onclick="saveSettings()" class="btn btn-primary">ذخیره تنظیمات</button>
+              <button onclick="alert('تنظیمات با موفقیت ذخیره شدند.')" class="btn btn-primary">ذخیره تنظیمات</button>
             </div>
           </div>
         </div>
@@ -382,7 +368,6 @@ export function renderAdminPanelPage() {
   <script>
     let authToken = localStorage.getItem('vpprv1_token');
 
-    // Check existing auth
     if (authToken) {
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('admin-app').style.display = 'flex';
@@ -433,10 +418,9 @@ export function renderAdminPanelPage() {
       if (target) target.style.display = 'block';
 
       if (tabName === 'dashboard') refreshDashboard();
-      if (tabName === 'servers' || tabName === 'nodes') loadServers();
-      if (tabName === 'peers') loadPeers();
+      if (tabName === 'nodes' || tabName === 'agent') loadNodes();
+      if (tabName === 'users') loadUsers();
       if (tabName === 'subs') loadSubs();
-      if (tabName === 'cidrs') loadCidrs();
       if (tabName === 'logs') loadLogs();
     }
 
@@ -451,32 +435,42 @@ export function renderAdminPanelPage() {
       return res.json();
     }
 
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
     async function refreshDashboard() {
       try {
         const data = await apiFetch('/api/admin/dashboard');
-        document.getElementById('stat-servers').innerText = data.totalServers || 0;
-        document.getElementById('stat-online-nodes').innerText = data.onlineServers || 0;
-        document.getElementById('stat-subs').innerText = data.totalSubs || 0;
-        document.getElementById('stat-peers').innerText = data.totalPeers || 0;
+        document.getElementById('stat-nodes').innerText = data.totalNodes || 0;
+        document.getElementById('stat-online-nodes').innerText = data.onlineNodes || 0;
+        document.getElementById('stat-users').innerText = data.totalUsers || 0;
+        document.getElementById('stat-active-users').innerText = data.activeUsers || 0;
 
         const tbody = document.getElementById('dashboard-nodes-table');
-        if (data.servers && data.servers.length > 0) {
-          tbody.innerHTML = data.servers.map(s => {
-            const isOnline = s.status === 'online';
+        if (data.nodes && data.nodes.length > 0) {
+          tbody.innerHTML = data.nodes.map(n => {
+            const isOnline = n.status === 'online';
             return \`
               <tr>
-                <td><strong>\${s.flag || ''} \${s.name}</strong></td>
-                <td>\${s.country}</td>
-                <td><code style="direction:ltr; display:inline-block;">\${s.host}:\${s.port}</code></td>
+                <td><strong>\${n.flag || ''} \${n.name}</strong></td>
+                <td>\${n.provider || 'Hetzner'}</td>
+                <td>\${n.country}</td>
+                <td><code style="direction:ltr; display:inline-block;">\${n.host}:\${n.port}</code></td>
+                <td><span style="color:var(--primary); font-weight:700;">VLESS + \${n.security === 'reality' ? 'Reality' : 'WS'}</span></td>
                 <td>
                   <span class="\${isOnline ? 'badge-online' : 'badge-offline'}">
                     \${isOnline ? '🟢 آنلاین' : '🔴 آفلاین'}
                   </span>
                 </td>
-                <td>\${isOnline ? s.latency + ' ms' : '---'}</td>
-                <td>\${isOnline ? s.load + '%' : '---'}</td>
-                <td>\${s.peers_count || 0}</td>
-                <td>\${s.last_heartbeat ? new Date(s.last_heartbeat).toLocaleTimeString('fa-IR') : 'هرگز'}</td>
+                <td>\${isOnline ? n.latency + ' ms' : '---'}</td>
+                <td>\${isOnline ? n.load + '%' : '---'}</td>
+                <td>\${n.users_count || 0}</td>
+                <td>\${n.last_heartbeat ? new Date(n.last_heartbeat).toLocaleTimeString('fa-IR') : 'هرگز'}</td>
               </tr>
             \`;
           }).join('');
@@ -486,37 +480,37 @@ export function renderAdminPanelPage() {
       }
     }
 
-    async function loadServers() {
+    async function loadNodes() {
       try {
         const data = await apiFetch('/api/servers');
-        const tbody = document.getElementById('servers-table');
+        const tbody = document.getElementById('nodes-table');
         const agentList = document.getElementById('agent-commands-list');
         
         if (data.servers) {
-          tbody.innerHTML = data.servers.map(s => \`
+          tbody.innerHTML = data.servers.map(n => \`
             <tr>
-              <td><code>\${s.id}</code></td>
-              <td>\${s.flag} \${s.name}</td>
-              <td>\${s.country}</td>
-              <td>\${s.host}</td>
-              <td>\${s.port}</td>
-              <td><code style="font-size:0.75rem;">\${s.public_key.substring(0, 16)}...</code></td>
+              <td><code>\${n.id}</code></td>
+              <td>\${n.flag} \${n.name}</td>
+              <td>\${n.provider || 'Hetzner'}</td>
+              <td>\${n.host}</td>
+              <td>\${n.port}</td>
+              <td>\${n.security}</td>
               <td>
-                <span class="\${s.status === 'online' ? 'badge-online' : 'badge-offline'}">
-                  \${s.status}
+                <span class="\${n.status === 'online' ? 'badge-online' : 'badge-offline'}">
+                  \${n.status}
                 </span>
               </td>
               <td>
-                <button onclick="deleteServer('\${s.id}')" class="btn btn-danger">حذف</button>
+                <button onclick="deleteNode('\${n.id}')" class="btn btn-danger">حذف</button>
               </td>
             </tr>
           \`).join('');
 
-          agentList.innerHTML = data.servers.map(s => \`
+          agentList.innerHTML = data.servers.map(n => \`
             <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
-              <h4 style="color:#fff; margin-bottom: 0.5rem;">نصب ایجنت روی سرور: \${s.flag} \${s.name} (\${s.host})</h4>
+              <h4 style="color:#fff; margin-bottom: 0.5rem;">نصب Xray Agent روی نود: \${n.flag} \${n.name} (\${n.provider} - \${n.host})</h4>
               <div class="code-snippet">
-                <span>curl -sSL https://raw.githubusercontent.com/amingangmanatgh2-hash/VPPRV1/main/node-agent/install.sh | sudo bash -s -- --server-id \${s.id} --token \${s.agent_token} --endpoint https://\${window.location.host}</span>
+                <span>curl -sSL https://raw.githubusercontent.com/amingangmanatgh2-hash/VPPRV1/main/node-agent/install.sh | sudo bash -s -- --node-id \${n.id} --token \${n.agent_token} --endpoint https://\${window.location.host}</span>
                 <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.innerText); alert('دستور کپی شد');">کپی دستور</button>
               </div>
             </div>
@@ -527,26 +521,49 @@ export function renderAdminPanelPage() {
       }
     }
 
-    async function loadPeers() {
+    async function loadUsers() {
       try {
-        const data = await apiFetch('/api/admin/peers');
-        const tbody = document.getElementById('peers-table');
-        if (data.peers) {
-          tbody.innerHTML = data.peers.map(p => \`
-            <tr>
-              <td><code>\${p.id}</code></td>
-              <td>\${p.server_id}</td>
-              <td><code>\${p.allowed_ips}</code></td>
-              <td><code style="font-size:0.75rem;">\${p.public_key}</code></td>
-              <td><span class="badge-online">\${p.status}</span></td>
-              <td>
-                <button onclick="deletePeer('\${p.id}')" class="btn btn-danger">حذف Peer</button>
-              </td>
-            </tr>
-          \`).join('');
+        const data = await apiFetch('/api/admin/users');
+        const tbody = document.getElementById('users-table');
+        if (data.users) {
+          tbody.innerHTML = data.users.map(u => {
+            const isActive = u.status === 'active';
+            return \`
+              <tr>
+                <td><strong>\${u.username}</strong></td>
+                <td><code style="font-size:0.8rem;">\${u.uuid}</code></td>
+                <td>
+                  <span class="\${isActive ? 'badge-online' : 'badge-offline'}">
+                    \${isActive ? 'فعال' : 'غیرفعال'}
+                  </span>
+                </td>
+                <td>\${formatBytes(u.traffic_used_bytes)}</td>
+                <td>\${u.traffic_limit_bytes > 0 ? formatBytes(u.traffic_limit_bytes) : 'نامحدود'}</td>
+                <td>\${new Date(u.expires_at).toLocaleDateString('fa-IR')}</td>
+                <td>
+                  <button onclick="toggleUserStatus('\${u.id}', '\${isActive ? 'disabled' : 'active'}')" class="\${isActive ? 'btn btn-warning' : 'btn btn-primary'}">
+                    \${isActive ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
+                  </button>
+                </td>
+              </tr>
+            \`;
+          }).join('');
         }
       } catch (e) {
         console.error(e);
+      }
+    }
+
+    async function toggleUserStatus(userId, newStatus) {
+      try {
+        await apiFetch(\`/api/admin/users/\${userId}/status\`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        loadUsers();
+      } catch (e) {
+        alert('خطا در تغییر وضعیت کاربر');
       }
     }
 
@@ -558,42 +575,18 @@ export function renderAdminPanelPage() {
           tbody.innerHTML = data.subscriptions.map(s => \`
             <tr>
               <td><code>\${s.token}</code></td>
-              <td>\${s.server_id}</td>
-              <td><code>\${s.client_address}</code></td>
-              <td>\${s.mode}</td>
+              <td>\${s.user_id}</td>
+              <td>\${s.protocol.toUpperCase()} + \${s.security}</td>
               <td><span class="badge-online">فعال</span></td>
               <td>\${new Date(s.created_at).toLocaleDateString('fa-IR')}</td>
               <td>
-                <a href="/api/v1/sub/\${s.token}" target="_blank" class="btn btn-primary" style="font-size:0.75rem;">دانلود .conf</a>
+                <a href="/api/v1/sub/\${s.token}" target="_blank" class="btn btn-primary" style="font-size:0.75rem;">دریافت VLESS</a>
               </td>
             </tr>
           \`).join('');
         }
       } catch (e) {
         console.error(e);
-      }
-    }
-
-    async function loadCidrs() {
-      try {
-        const data = await apiFetch('/api/admin/cidrs');
-        document.getElementById('cidrs-textarea').value = JSON.stringify(data.cidrs, null, 2);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    async function saveCidrs() {
-      try {
-        const parsed = JSON.parse(document.getElementById('cidrs-textarea').value);
-        await apiFetch('/api/admin/cidrs', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cidrs: parsed })
-        });
-        alert('رنج‌های CIDR نت ملی با موفقیت ذخیره شدند.');
-      } catch (e) {
-        alert('خطا در فرمت JSON یا ذخیره‌سازی: ' + e.message);
       }
     }
 

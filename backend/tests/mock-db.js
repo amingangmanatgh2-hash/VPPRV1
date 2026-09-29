@@ -1,11 +1,11 @@
-// Mock D1 Database implementation for Node.js unit tests
+// Mock D1 Database implementation for Node.js unit tests (Xray Core)
 export class MockD1 {
   constructor() {
     this.tables = {
-      servers: [],
+      nodes: [],
       users: [],
       subscriptions: [],
-      peers: [],
+      inbounds: [],
       configs: [],
       logs: [],
       admin_auth: [],
@@ -29,8 +29,15 @@ export class MockD1 {
         const q = query.trim().replace(/\s+/g, ' ');
         const params = this.params || [];
 
-        if (q.includes("SELECT COUNT(*) as count FROM servers")) {
-          return { results: [{ count: self.tables.servers.length }] };
+        if (q.includes("SELECT COUNT(*) as count FROM nodes")) {
+          return { results: [{ count: self.tables.nodes.length }] };
+        }
+        if (q.includes("SELECT COUNT(*) as count FROM users WHERE status = 'active'")) {
+          const active = self.tables.users.filter(u => u.status === 'active');
+          return { results: [{ count: active.length }] };
+        }
+        if (q.includes("SELECT COUNT(*) as count FROM users")) {
+          return { results: [{ count: self.tables.users.length }] };
         }
         if (q.includes("SELECT COUNT(*) as count FROM admin_auth")) {
           return { results: [{ count: self.tables.admin_auth.length }] };
@@ -38,49 +45,49 @@ export class MockD1 {
         if (q.includes("SELECT COUNT(*) as count FROM subscriptions")) {
           return { results: [{ count: self.tables.subscriptions.length }] };
         }
-        if (q.includes("SELECT COUNT(*) as count FROM peers")) {
-          return { results: [{ count: self.tables.peers.length }] };
+        if (q.includes("SELECT * FROM nodes WHERE id = ?")) {
+          const n = self.tables.nodes.find(x => x.id === params[0]);
+          return { results: n ? [n] : [] };
         }
-        if (q.includes("SELECT * FROM servers WHERE id = ?")) {
-          const s = self.tables.servers.find(x => x.id === params[0]);
-          return { results: s ? [s] : [] };
+        if (q.includes("SELECT * FROM nodes WHERE agent_token = ?")) {
+          const n = self.tables.nodes.find(x => x.agent_token === params[0]);
+          return { results: n ? [n] : [] };
         }
-        if (q.includes("SELECT * FROM servers WHERE agent_token = ?")) {
-          const s = self.tables.servers.find(x => x.agent_token === params[0]);
-          return { results: s ? [s] : [] };
+        if (q.includes("SELECT * FROM nodes WHERE status = 'online'")) {
+          const n = self.tables.nodes.filter(x => x.status === 'online');
+          return { results: n };
         }
-        if (q.includes("SELECT * FROM servers WHERE status = 'online'")) {
-          const s = self.tables.servers.filter(x => x.status === 'online');
-          return { results: s };
+        if (q.includes("SELECT * FROM nodes LIMIT 1")) {
+          return { results: self.tables.nodes.slice(0, 1) };
         }
-        if (q.includes("SELECT * FROM servers LIMIT 1")) {
-          return { results: self.tables.servers.slice(0, 1) };
-        }
-        if (q.includes("SELECT id, name, country, flag, host, port, public_key, status, load, latency, peers_count, agent_token, last_heartbeat FROM servers") || q.includes("SELECT * FROM servers")) {
-          return { results: self.tables.servers };
+        if (q.includes("SELECT") && q.includes("FROM nodes")) {
+          return { results: self.tables.nodes };
         }
         if (q.includes("SELECT * FROM subscriptions WHERE token = ?")) {
           const sub = self.tables.subscriptions.find(x => x.token === params[0]);
           return { results: sub ? [sub] : [] };
         }
+        if (q.includes("SELECT * FROM users WHERE id = ?")) {
+          const u = self.tables.users.find(x => x.id === params[0]);
+          return { results: u ? [u] : [] };
+        }
+        if (q.includes("SELECT") && q.includes("FROM users WHERE status = 'active'")) {
+          const active = self.tables.users.filter(u => u.status === 'active');
+          return { results: active };
+        }
+        if (q.includes("SELECT * FROM users")) {
+          return { results: self.tables.users };
+        }
         if (q.includes("SELECT * FROM admin_auth WHERE username = ?")) {
           const u = self.tables.admin_auth.find(x => x.username === params[0]);
           return { results: u ? [u] : [] };
-        }
-        if (q.includes("SELECT value FROM configs WHERE key = 'iran_cidrs'")) {
-          const c = self.tables.configs.find(x => x.key === 'iran_cidrs');
-          return { results: c ? [c] : [] };
         }
         if (q.includes("SELECT count, reset_at FROM rate_limits WHERE ip_action = ?")) {
           const r = self.tables.rate_limits.find(x => x.ip_action === params[0]);
           return { results: r ? [r] : [] };
         }
-        if (q.includes("SELECT id, public_key, preshared_key, allowed_ips, status FROM peers WHERE server_id = ?")) {
-          const p = self.tables.peers.filter(x => x.server_id === params[0] && x.status === 'active');
-          return { results: p };
-        }
-        if (q.includes("SELECT * FROM peers")) {
-          return { results: self.tables.peers };
+        if (q.includes("SELECT * FROM subscriptions")) {
+          return { results: self.tables.subscriptions };
         }
         if (q.includes("SELECT * FROM logs")) {
           return { results: self.tables.logs };
@@ -91,23 +98,31 @@ export class MockD1 {
         const q = query.trim().replace(/\s+/g, ' ');
         const params = this.params || [];
 
-        if (q.startsWith("INSERT INTO servers")) {
-          self.tables.servers.push({
+        if (q.startsWith("INSERT INTO nodes")) {
+          self.tables.nodes.push({
             id: params[0],
             name: params[1],
             country: params[2],
             flag: params[3],
-            host: params[4],
-            port: params[5],
-            public_key: params[6],
-            endpoint_ip: params[7],
+            provider: params[4],
+            host: params[5],
+            port: params[6],
+            ws_port: params[7],
+            protocol: params[8],
+            transport: params[9],
+            security: params[10],
+            reality_public_key: params[11],
+            reality_private_key: params[12],
+            reality_short_id: params[13],
+            reality_server_name: params[14],
+            ws_path: params[15],
             status: 'offline',
             load: 0,
             latency: 0,
-            peers_count: 0,
-            agent_token: params[8],
+            users_count: 0,
+            agent_token: params[16],
             last_heartbeat: 0,
-            created_at: params[9]
+            created_at: params[17]
           });
         }
         if (q.startsWith("INSERT INTO admin_auth")) {
@@ -120,57 +135,54 @@ export class MockD1 {
             created_at: params[2]
           });
         }
-        if (q.startsWith("INSERT INTO configs")) {
-          self.tables.configs.push({
-            key: 'iran_cidrs',
-            value: params[0],
-            updated_at: params[1]
+        if (q.startsWith("INSERT INTO users")) {
+          self.tables.users.push({
+            id: params[0],
+            username: params[1],
+            email: params[2],
+            uuid: params[3],
+            status: 'active',
+            traffic_limit_bytes: params[4],
+            traffic_used_bytes: 0,
+            created_at: params[5],
+            expires_at: params[6]
           });
         }
         if (q.startsWith("INSERT INTO subscriptions")) {
           self.tables.subscriptions.push({
             token: params[0],
-            user_id: 'guest',
-            created_ip: params[1],
-            server_id: params[2],
-            client_private_key: params[3],
-            client_public_key: params[4],
-            client_address: params[5],
-            preshared_key: params[6],
-            mode: 'full',
+            user_id: params[1],
+            created_ip: params[2],
+            node_id: params[3],
+            protocol: 'vless',
+            transport: 'tcp',
+            security: 'reality',
             is_active: 1,
-            created_at: params[7],
-            expires_at: params[8]
+            created_at: params[4],
+            expires_at: params[5]
           });
         }
-        if (q.startsWith("INSERT INTO peers")) {
-          self.tables.peers.push({
-            id: params[0],
-            server_id: params[1],
-            subscription_token: params[2],
-            public_key: params[3],
-            preshared_key: params[4],
-            allowed_ips: params[5],
-            status: 'active',
-            created_at: params[6]
-          });
-        }
-        if (q.startsWith("UPDATE servers SET status = 'online'")) {
-          const s = self.tables.servers.find(x => x.id === params[4]);
-          if (s) {
-            s.status = 'online';
-            s.load = params[0];
-            s.latency = params[1];
-            s.peers_count = params[2];
-            s.last_heartbeat = params[3];
+        if (q.startsWith("UPDATE nodes SET status = 'online'")) {
+          const n = self.tables.nodes.find(x => x.id === params[4]);
+          if (n) {
+            n.status = 'online';
+            n.load = params[0];
+            n.latency = params[1];
+            n.users_count = params[2];
+            n.last_heartbeat = params[3];
           }
         }
-        if (q.startsWith("UPDATE servers SET peers_count = peers_count + 1")) {
-          const s = self.tables.servers.find(x => x.id === params[0]);
-          if (s) s.peers_count += 1;
+        if (q.startsWith("UPDATE nodes SET users_count = users_count + 1")) {
+          const n = self.tables.nodes.find(x => x.id === params[0]);
+          if (n) n.users_count += 1;
         }
-        if (q.startsWith("DELETE FROM peers WHERE id = ?")) {
-          self.tables.peers = self.tables.peers.filter(x => x.id !== params[0]);
+        if (q.startsWith("UPDATE users SET status = ?")) {
+          const u = self.tables.users.find(x => x.id === params[1] || x.uuid === params[1]);
+          if (u) u.status = params[0];
+        }
+        if (q.startsWith("UPDATE users SET traffic_used_bytes = traffic_used_bytes + ?")) {
+          const u = self.tables.users.find(x => x.uuid === params[1]);
+          if (u) u.traffic_used_bytes += params[0];
         }
         if (q.startsWith("INSERT INTO logs")) {
           self.tables.logs.push({

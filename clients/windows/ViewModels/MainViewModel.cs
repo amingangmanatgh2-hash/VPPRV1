@@ -10,16 +10,16 @@ namespace VPPRV1.ViewModels;
 public class MainViewModel : INotifyPropertyChanged
 {
     private readonly HttpClient _http = new();
-    private readonly WireGuardService _wgService = new();
+    private readonly XrayClientService _xrayService = new();
     private readonly System.Timers.Timer _durationTimer = new(1000);
 
     private ConnectionState _state = ConnectionState.Disconnected;
     private string _statusText = "قطع";
     private string _pingDisplay = "---";
     private string _durationDisplay = "۰۰:۰۰:۰۰";
-    private bool _isMelliMode = false;
-    private ServerItem? _selectedServer;
-    private List<ServerItem> _servers = new();
+    private bool _isRealityMode = true;
+    private NodeItem? _selectedNode;
+    private List<NodeItem> _nodes = new();
     private DateTime? _connectedSince;
 
     public string BackendUrl { get; set; } = "https://vpprv1.workers.dev";
@@ -27,7 +27,7 @@ public class MainViewModel : INotifyPropertyChanged
     public MainViewModel()
     {
         _durationTimer.Elapsed += (s, e) => UpdateDuration();
-        _ = LoadServersAsync();
+        _ = LoadNodesAsync();
     }
 
     public ConnectionState State
@@ -59,14 +59,14 @@ public class MainViewModel : INotifyPropertyChanged
         set { _durationDisplay = value; OnPropertyChanged(); }
     }
 
-    public bool IsMelliMode
+    public bool IsRealityMode
     {
-        get => _isMelliMode;
+        get => _isRealityMode;
         set
         {
-            if (_isMelliMode != value)
+            if (_isRealityMode != value)
             {
-                _isMelliMode = value;
+                _isRealityMode = value;
                 OnPropertyChanged();
                 if (State == ConnectionState.Connected)
                 {
@@ -76,16 +76,16 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public List<ServerItem> Servers
+    public List<NodeItem> Nodes
     {
-        get => _servers;
-        set { _servers = value; OnPropertyChanged(); }
+        get => _nodes;
+        set { _nodes = value; OnPropertyChanged(); }
     }
 
-    public ServerItem? SelectedServer
+    public NodeItem? SelectedNode
     {
-        get => _selectedServer;
-        set { _selectedServer = value; OnPropertyChanged(); }
+        get => _selectedNode;
+        set { _selectedNode = value; OnPropertyChanged(); }
     }
 
     private void UpdateStatusText()
@@ -110,12 +110,11 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public async Task LoadServersAsync()
+    public async Task LoadNodesAsync()
     {
         try
         {
             var res = await _http.GetFromJsonAsync<Dictionary<string, object>>($"{BackendUrl}/api/servers");
-            // Populate servers list
         }
         catch { }
     }
@@ -137,10 +136,9 @@ public class MainViewModel : INotifyPropertyChanged
         State = ConnectionState.Checking;
         await Task.Delay(400);
 
-        // Ping selected or auto server
-        string targetHost = SelectedServer?.Host ?? "1.1.1.1";
-        int pingMs = await _wgService.PingHostAsync(targetHost);
-        PingDisplay = (pingMs < 999 ? $"{pingMs} میلی‌ثانیه" : "خوب").ToPersianNumbers();
+        string targetHost = SelectedNode?.Host ?? "1.1.1.1";
+        int pingMs = await _xrayService.PingHostAsync(targetHost);
+        PingDisplay = (pingMs < 999 ? $"{pingMs} میلی‌ثانیه" : "عالی").ToPersianNumbers();
 
         State = ConnectionState.Connecting;
         await Task.Delay(500);
@@ -152,10 +150,10 @@ public class MainViewModel : INotifyPropertyChanged
 
             if (prov != null && !string.IsNullOrEmpty(prov.Token))
             {
-                string confUrl = $"{BackendUrl}/api/v1/sub/{prov.Token}" + (IsMelliMode ? "?mode=split&port=443" : "");
-                string confContent = await _http.GetStringAsync(confUrl);
+                string jsonUrl = $"{BackendUrl}/api/v1/sub/{prov.Token}?format=json";
+                string clientJson = await _http.GetStringAsync(jsonUrl);
 
-                await _wgService.StartTunnelAsync(confContent);
+                await _xrayService.StartVlessTunnelAsync(clientJson);
                 _connectedSince = DateTime.Now;
                 _durationTimer.Start();
                 State = ConnectionState.Connected;
@@ -175,7 +173,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         State = ConnectionState.Disconnecting;
         _durationTimer.Stop();
-        await _wgService.StopTunnelAsync();
+        await _xrayService.StopVlessTunnelAsync();
         await Task.Delay(400);
         State = ConnectionState.Disconnected;
         DurationDisplay = "۰۰:۰۰:۰۰";

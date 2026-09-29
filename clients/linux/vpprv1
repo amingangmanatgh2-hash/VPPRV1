@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 VPPRV1 Linux Command Line Interface (CLI)
-ابزار خط فرمان رسمی و کاملاً فارسی سامانه VPPRV1
+ابزار خط فرمان رسمی و کاملاً فارسی سامانه VPPRV1 مبتنی بر Xray Core & VLESS
 """
 
 import sys
@@ -14,27 +14,22 @@ import urllib.request
 import urllib.error
 
 CONFIG_DIR = os.path.expanduser("~/.config/vpprv1")
-CONFIG_FILE = os.path.join(CONFIG_DIR, "current.conf")
 META_FILE = os.path.join(CONFIG_DIR, "meta.json")
+CONFIG_JSON_FILE = os.path.join(CONFIG_DIR, "config.json")
+XRAY_BIN = "/usr/local/bin/xray"
 
 def to_persian_digits(num_str):
     mapping = {'0': '۰', '1': '۱', '2': '۲', '3': '۳', '4': '۴', '5': '۵', '6': '۶', '7': '۷', '8': '۸', '9': '۹'}
     return ''.join(mapping.get(c, c) for c in str(num_str))
 
-def check_root():
-    if os.geteuid() != 0:
-        print("خطا: برای برقراری تونل WireGuard نیاز به دسترسی روت (sudo) است.", file=sys.stderr)
-        print("لطفاً دستور را به صورت: sudo vpprv1 ... اجرا نمایید.")
-        sys.exit(1)
-
 def run_cmd(cmd):
     try:
         return subprocess.run(cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True).stdout.strip()
-    except subprocess.CalledProcessError as e:
+    except subprocess.CalledProcessError:
         return ""
 
 def cmd_provision(api_url="https://vpprv1.workers.dev"):
-    print("در حال دریافت اشتراک جدید از سرور VPPRV1...")
+    print("در حال صدور اشتراک جدید VLESS از سرور VPPRV1...")
     try:
         req = urllib.request.Request(f"{api_url}/api/v1/provision", data=b"{}", headers={"Content-Type": "application/json"}, method="POST")
         with urllib.request.urlopen(req, timeout=10) as resp:
@@ -45,8 +40,9 @@ def cmd_provision(api_url="https://vpprv1.workers.dev"):
                     json.dump(data, f, indent=2)
                 print("اشتراک با موفقیت صادر شد!")
                 print(f"توکن اشتراک: {data.get('token')}")
-                print(f"سرور متصل: {data.get('server_name')}")
-                print(f"آی‌پی اختصاصی: {data.get('client_address')}")
+                print(f"شناسه کاربر (UUID): {data.get('uuid')}")
+                print(f"نود متصل: {data.get('node_name')}")
+                print(f"لینک VLESS: {data.get('vless_uri')}")
                 return data
             else:
                 print(f"خطا در صدور اشتراک: {data.get('error')}")
@@ -55,8 +51,7 @@ def cmd_provision(api_url="https://vpprv1.workers.dev"):
         print(f"خطا در برقراری ارتباط با سرور: {e}")
         return None
 
-def cmd_connect(melli=False, api_url="https://vpprv1.workers.dev"):
-    check_root()
+def cmd_connect(api_url="https://vpprv1.workers.dev"):
     meta = None
     if os.path.exists(META_FILE):
         with open(META_FILE, "r") as f:
@@ -71,90 +66,83 @@ def cmd_connect(melli=False, api_url="https://vpprv1.workers.dev"):
             sys.exit(1)
 
     token = meta["token"]
-    mode_str = "split" if melli else "full"
-    sub_url = f"{api_url}/api/v1/sub/{token}?mode={mode_str}&port=443"
+    json_url = f"{api_url}/api/v1/sub/{token}?format=json"
 
-    print(f"در حال دانلود کانفیگ ({ 'حالت نت ملی (Split Tunnel)' if melli else 'حالت عبور کامل ترافیک (Full Tunnel)' })...")
+    print("در حال دریافت کانفیگ کلاینت Xray...")
     try:
-        with urllib.request.urlopen(sub_url, timeout=10) as resp:
+        with urllib.request.urlopen(json_url, timeout=10) as resp:
             conf_text = resp.read().decode('utf-8')
-            with open(CONFIG_FILE, "w") as f:
+            with open(CONFIG_JSON_FILE, "w") as f:
                 f.write(conf_text)
-            os.chmod(CONFIG_FILE, 0o600)
     except Exception as e:
         print(f"خطا در دریافت کانفیگ: {e}")
         sys.exit(1)
 
-    # Bring down interface if up
-    run_cmd("wg-quick down vpprv1 2>/dev/null")
-    # Copy config to /etc/wireguard/vpprv1.conf
-    run_cmd(f"cp {CONFIG_FILE} /etc/wireguard/vpprv1.conf")
-    
-    print("در حال برقراری تونل WireGuard...")
-    res = run_cmd("wg-quick up vpprv1")
+    print("در حال برقراری اتصال با هسته Xray Core...")
+    if os.path.exists(XRAY_BIN):
+        run_cmd("killall -9 xray 2>/dev/null || true")
+        subprocess.Popen(f"{XRAY_BIN} run -c {CONFIG_JSON_FILE} > /dev/null 2>&1 &", shell=True)
     
     print("-------------------------------------------------------------")
-    print("اتصال امن VPPRV1 با موفقیت برقرار شد!")
-    print(f"وضعیت: متصل ({ 'نت ملی - بدون فیلتر سایت‌های ایرانی' if melli else 'بین‌الملل کامل' })")
-    print("جهت قطع اتصال از دستور: sudo vpprv1 disconnect استفاده کنید.")
+    print("اتصال امن VLESS Reality با موفقیت برقرار شد!")
+    print("پروکسی محلی SOCKS روی پورت 10808 و HTTP روی پورت 10809 فعال است.")
+    print("جهت قطع اتصال از دستور: vpprv1 disconnect استفاده نمایید.")
     print("-------------------------------------------------------------")
 
 def cmd_disconnect():
-    check_root()
-    print("در حال قطع تونل VPPRV1...")
-    run_cmd("wg-quick down vpprv1 2>/dev/null")
-    print("تونل با موفقیت قطع شد.")
+    print("در حال قطع اتصال Xray...")
+    run_cmd("killall -9 xray 2>/dev/null || true")
+    print("اتصال با موفقیت قطع شد.")
 
 def cmd_status():
-    output = run_cmd("wg show vpprv1")
-    if output:
-        print("================ وضعیت تونل VPPRV1 ================")
+    res = run_cmd("pgrep -f 'xray run'")
+    if res:
+        print("================ وضعیت سرویس Xray Core ================")
         print("وضعیت: متصل 🟢")
-        print(output)
-        print("===================================================")
+        print("پروکسی فعال: 127.0.0.1:10808 (SOCKS5) / 127.0.0.1:10809 (HTTP)")
+        print("=======================================================")
     else:
-        print("وضعیت: قطع 🔴 (هیچ تونل فعالی وجود ندارد)")
+        print("وضعیت: قطع 🔴 (هیچ کانکشن فعالی وجود ندارد)")
 
 def cmd_servers(api_url="https://vpprv1.workers.dev"):
-    print("در حال دریافت لیست سرورهای فعال...")
+    print("در حال دریافت لیست نودهای سرور Xray...")
     try:
         with urllib.request.urlopen(f"{api_url}/api/servers", timeout=10) as resp:
             data = json.loads(resp.read().decode())
             servers = data.get("servers", [])
-            print("================ سرورهای جهانی VPPRV1 ================")
+            print("================ نودهای سرور VPPRV1 (Hetzner / Vultr / OVH) ================")
             for s in servers:
                 status_icon = "🟢 آنلاین" if s.get("status") == "online" else "🔴 آفلاین"
                 ping_str = to_persian_digits(s.get("latency", 0)) + " ms" if s.get("status") == "online" else "---"
-                print(f"{s.get('flag')} {s.get('name'):<22} | {s.get('host'):<18} | {status_icon} | پینگ: {ping_str}")
-            print("======================================================")
+                print(f"{s.get('flag')} {s.get('name'):<30} | {s.get('host'):<18} | {status_icon} | پینگ: {ping_str}")
+            print("==========================================================================")
     except Exception as e:
-        print(f"خطا در دریافت لیست سرورها: {e}")
+        print(f"خطا در دریافت لیست نودها: {e}")
 
 def main():
-    parser = argparse.ArgumentParser(description="VPPRV1 Persian Linux WireGuard Client")
+    parser = argparse.ArgumentParser(description="VPPRV1 Persian Linux Xray Core & VLESS Client")
     subparsers = parser.add_subparsers(dest="command")
 
     # connect
-    p_conn = subparsers.add_parser("connect", help="برقراری اتصال امن")
-    p_conn.add_argument("--melli", action="store_true", help="فعال‌سازی حالت نت ملی (Split Tunnel)")
+    p_conn = subparsers.add_parser("connect", help="برقراری اتصال امن VLESS")
     p_conn.add_argument("--api", default="https://vpprv1.workers.dev", help="آدرس API سرور")
 
     # disconnect
     subparsers.add_parser("disconnect", help="قطع اتصال")
 
     # status
-    subparsers.add_parser("status", help="نمایش وضعیت اتصال و ترافیک")
+    subparsers.add_parser("status", help="نمایش وضعیت اتصال")
 
     # servers
-    subparsers.add_parser("servers", help="نمایش لیست سرورها و پینگ")
+    subparsers.add_parser("servers", help="نمایش لیست نودها و پینگ")
 
     # provision
-    subparsers.add_parser("provision", help="صدور اشتراک جدید")
+    subparsers.add_parser("provision", help="صدور اشتراک جدید VLESS")
 
     args = parser.parse_args()
 
     if args.command == "connect":
-        cmd_connect(melli=args.melli, api_url=args.api)
+        cmd_connect(api_url=args.api)
     elif args.command == "disconnect":
         cmd_disconnect()
     elif args.command == "status":

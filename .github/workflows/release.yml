@@ -30,8 +30,8 @@ jobs:
           body: |
             ## انتشار نسخه رسمی سامانه VPPRV1
             
-            - پروتکل کامل WireGuard مبتنی بر X25519 و PSK
-            - پشتیبانی از حالت نت ملی (Split Tunnel) روی UDP 443 و MTU 1330
+            - پروتکل کامل Xray Core مبتنی بر VLESS Reality و WebSocket
+            - مدیریت هوشمند کاربران، حجم مصرفی، انقضا و همگام‌سازی لحظه‌ای با VPSهای Hetzner, Vultr, OVH
             - کلاینت‌های رسمی ویندوز، اندروید و لینوکس
           files: |
             VPPRV1-Linux.tar.gz

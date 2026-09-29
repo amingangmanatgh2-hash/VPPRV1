@@ -16,32 +16,22 @@ class VPPRV1VpnService : VpnService() {
             return START_NOT_STICKY
         }
 
-        val clientIp = intent?.getStringExtra("CLIENT_IP") ?: "10.66.1.2"
-        val isMelli = intent?.getBooleanExtra("IS_MELLI", false) ?: false
-
-        connectTunnel(clientIp, isMelli)
+        val clientIp = intent?.getStringExtra("CLIENT_IP") ?: "172.19.0.1"
+        connectTunnel(clientIp)
         return START_STICKY
     }
 
-    private fun connectTunnel(clientIp: String, isMelli: Boolean) {
+    private fun connectTunnel(clientIp: String) {
         try {
             val builder = Builder()
-                .setSession("VPPRV1 Secure Tunnel")
-                .addAddress(clientIp, 32)
+                .setSession("VPPRV1 Xray VLESS Tunnel")
+                .addAddress(clientIp, 30)
                 .addDnsServer("1.1.1.1")
-                .setMtu(if (isMelli) 1330 else 1420)
-
-            if (isMelli) {
-                // Route international CIDRs only, bypass domestic Iran IP ranges
-                builder.addRoute("1.0.0.0", 8)
-                builder.addRoute("3.0.0.0", 8)
-                builder.addRoute("8.0.0.0", 6)
-            } else {
-                builder.addRoute("0.0.0.0", 0)
-            }
+                .addRoute("0.0.0.0", 0)
+                .setMtu(1500)
 
             vpnInterface = builder.establish()
-            Log.i("VPPRV1", "VPN Interface established successfully")
+            Log.i("VPPRV1", "Xray VLESS VPN Interface established successfully")
         } catch (e: Exception) {
             Log.e("VPPRV1", "Failed to establish VPN interface", e)
         }
@@ -52,7 +42,7 @@ class VPPRV1VpnService : VpnService() {
             vpnInterface?.close()
             vpnInterface = null
             stopSelf()
-            Log.i("VPPRV1", "VPN Interface disconnected")
+            Log.i("VPPRV1", "Xray VPN Interface disconnected")
         } catch (e: Exception) {
             Log.e("VPPRV1", "Error closing VPN", e)
         }

@@ -1,12 +1,12 @@
-# مستندات کامل API سامانه VPPRV1
+# مستندات کامل API سامانه VPPRV1 (Xray Core & VLESS)
 
-این سند شامل مشخصات تمامی Endpointهای عمومی، مدیریتی، اشتراک و نود ایجنت سامانه VPPRV1 می‌باشد.
+این سند شامل مشخصات تمامی Endpointهای عمومی، اشتراک، نود ایجنت و پنل مدیریت سامانه VPPRV1 مبتنی بر هسته Xray Core می‌باشد.
 
 ---
 
 ## ۱. وب‌سرویس‌های عمومی (Public Endpoints)
 
-### دریافت لیست سرورها
+### دریافت لیست نودهای سرور (VPS)
 - **متد:** `GET /api/servers`
 - **پاسخ موفق (200 OK):**
 ```json
@@ -15,17 +15,22 @@
   "count": 11,
   "servers": [
     {
-      "id": "de-fra-1",
-      "name": "آلمان (فرانکفورت)",
+      "id": "hetzner-de-1",
+      "name": "آلمان - فرانکفورت (Hetzner)",
       "country": "Germany",
       "flag": "🇩🇪",
+      "provider": "Hetzner Cloud",
       "host": "de1.vpprv1.net",
       "port": 443,
-      "public_key": "x25519_base64_public_key...",
+      "protocol": "vless",
+      "security": "reality",
+      "reality_public_key": "kQ9bU1wX8z7yA6v5c4b3a2Z1Y0X9w8V7u6T5s4R3q2P",
+      "reality_short_id": "a1b2c3d4",
+      "reality_server_name": "www.microsoft.com",
       "status": "offline",
       "load": 0,
       "latency": 0,
-      "peers_count": 0
+      "users_count": 0
     }
   ]
 }
@@ -40,64 +45,68 @@
   "total_count": 11,
   "online_count": 1,
   "offline_count": 10,
-  "total_active_peers": 5,
+  "total_active_users": 5,
   "average_latency_ms": 35,
   "timestamp": 1790774200000
 }
 ```
 
-### صدور اشتراک آنی (Provision)
-بدون نیاز به ورودی کاربر یک اشتراک معتبر WireGuard به همراه کلید X25519 تولید می‌کند (دارای Rate Limit بر اساس IP).
+### صدور اشتراک آنی VLESS (Provision)
+بدون نیاز به ورودی کاربر یک حساب کاربری و اشتراک معتبر VLESS به همراه UUID یکتا تولید می‌کند (دارای Rate Limit بر اساس IP).
 - **متد:** `POST /api/v1/provision`
 - **پاسخ موفق (200 OK):**
 ```json
 {
   "success": true,
-  "message": "اشتراک وایرگارد با موفقیت ایجاد شد.",
+  "message": "اشتراک VLESS با موفقیت ایجاد شد.",
   "token": "sub_a1b2c3d4e5f67890",
+  "uuid": "7a35e839-447a-4286-a212-094364491745",
+  "vless_uri": "vless://7a35e839-447a-4286-a212-094364491745@de1.vpprv1.net:443?type=tcp&security=reality&pbk=...&sid=a1b2c3d4&sni=www.microsoft.com&flow=xtls-rprx-vision#VPPRV1-Node",
   "subscription_url": "https://vpprv1.workers.dev/api/v1/sub/sub_a1b2c3d4e5f67890",
-  "conf_url": "https://vpprv1.workers.dev/api/v1/sub/sub_a1b2c3d4e5f67890",
-  "client_address": "10.66.14.22/32",
-  "server_id": "de-fra-1",
-  "server_name": "آلمان (فرانکفورت)",
+  "node_id": "hetzner-de-1",
+  "node_name": "آلمان - فرانکفورت (Hetzner)",
+  "traffic_limit_bytes": 53687091200,
   "created_at": 1790774200000,
   "expires_at": 1793366200000
 }
 ```
 
-### دریافت فایل کانفیگ وایرگارد (.conf)
+### دریافت کانفیگ اشتراک VLESS
 - **متد:** `GET /api/v1/sub/:token`
-- **پارامترهای اختیاری Query:**
-  - `mode=split` : فعال‌سازی تفکیک ترافیک نت ملی (AllowedIPs شامل رنج‌های خارج از ایران، MTU 1330)
-  - `port=443` : تنظیم پورت روی UDP 443
-  - `mtu=1330` : تنظیم دستی اندازه MTU
-- **خروجی:** متن استاندارد فایل WireGuard با هدر دانلودی `Content-Disposition: attachment; filename="vpprv1-...conf"`
+- **پارامترهای Query:**
+  - `format=vless` (پیش‌فرض): خروجی لینک مستقیم استاندارد `vless://...`
+  - `format=json` : خروجی ساختار کامل JSON کلاینت برای Xray
+- **خروجی:** متن استاندارد لینک VLESS یا ساختار JSON
 
 ---
 
-## ۲. وب‌سرویس‌های ارتباطی Node Agent
+## ۲. وب‌سرویس‌های ارتباطی Xray Node Agent
 
-### همگام‌سازی Peerهای فعال
+### همگام‌سازی Inbound و کاربران فعال
 - **متد:** `POST /api/agent/sync`
 - **هدر:** `Authorization: Bearer <NODE_AGENT_TOKEN>`
 - **پاسخ موفق (200 OK):**
 ```json
 {
   "success": true,
-  "server_id": "de-fra-1",
-  "peers": [
+  "node_id": "hetzner-de-1",
+  "users_count": 10,
+  "users": [
     {
-      "id": "peer_123456",
-      "public_key": "client_public_key_x25519...",
-      "preshared_key": "psk_base64_32bytes...",
-      "allowed_ips": "10.66.14.22/32",
-      "status": "active"
+      "id": "7a35e839-447a-4286-a212-094364491745",
+      "uuid": "7a35e839-447a-4286-a212-094364491745",
+      "email": "user_7a35e839@vpprv1.net"
     }
-  ]
+  ],
+  "xray_config": {
+    "log": { "loglevel": "warning" },
+    "inbounds": [ ... ],
+    "outbounds": [ ... ]
+  }
 }
 ```
 
-### ارسال هارت‌بیت و وضعیت نود
+### ارسال هارت‌بیت و آمار ترافیک نود
 - **متد:** `POST /api/agent/report`
 - **هدر:** `Authorization: Bearer <NODE_AGENT_TOKEN>`
 - **بدنه درخواست (JSON):**
@@ -105,7 +114,10 @@
 {
   "load": 18,
   "latency": 32,
-  "peers_count": 4,
+  "users_count": 4,
+  "user_traffic": {
+    "7a35e839-447a-4286-a212-094364491745": 104857600
+  },
   "timestamp": 1790774200000
 }
 ```
@@ -123,21 +135,13 @@
   "password": "YOUR_ADMIN_PASSWORD"
 }
 ```
-- **پاسخ موفق:** توکن نشست رمزشده با HMAC-SHA256 (با اعتبار ۲۴ ساعت)
 
-### دریافت اطلاعات داشبورد
-- **متد:** `GET /api/admin/dashboard`
-- **هدر:** `Authorization: Bearer <SESSION_TOKEN>`
-
-### به‌روزرسانی رنج‌های نت ملی (Iran CIDRs)
-- **متد:** `POST /api/admin/cidrs`
+### فعال / غیرفعال‌سازی کاربر
+- **متد:** `POST /api/admin/users/:id/status`
 - **هدر:** `Authorization: Bearer <SESSION_TOKEN>`
 - **بدنه درخواست:**
 ```json
 {
-  "cidrs": [
-    "2.144.0.0/14",
-    "5.22.0.0/15"
-  ]
+  "status": "disabled"
 }
 ```
