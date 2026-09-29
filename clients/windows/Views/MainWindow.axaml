@@ -33,7 +33,7 @@
     <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="24">
       <Button Classes="connect-btn"
               Command="{Binding ToggleConnectionAsync}"
-              Background="{Binding State, Converter={StaticResource StateToBrushConverter}}"
+              Background="#10B981"
               Foreground="#FFFFFF">
         <StackPanel Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
           <TextBlock Text="⚡" FontSize="32" HorizontalAlignment="Center"/>

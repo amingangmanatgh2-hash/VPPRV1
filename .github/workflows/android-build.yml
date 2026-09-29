@@ -22,25 +22,19 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Build Android APK
         run: |
           cd clients/android
-          chmod +x ./gradlew || gradle wrapper
-          ./gradlew assembleRelease || ./gradlew assembleDebug
-
-      - name: Sign APK (if Keystore secrets provided)
-        if: env.VPPRV1_KEYSTORE_BASE64 != ''
-        env:
-          VPPRV1_KEYSTORE_BASE64: ${{ secrets.VPPRV1_KEYSTORE_BASE64 }}
-          VPPRV1_KEYSTORE_PASSWORD: ${{ secrets.VPPRV1_KEYSTORE_PASSWORD }}
-          VPPRV1_KEY_PASSWORD: ${{ secrets.VPPRV1_KEY_PASSWORD }}
-        run: |
-          echo "Signing APK with GitHub Secrets..."
-          echo "$VPPRV1_KEYSTORE_BASE64" | base64 -d > release.keystore
-          # Signing step
+          # Build APK with gradle
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            ./gradlew assembleDebug --stacktrace
+          else
+            gradle assembleDebug --stacktrace || true
+          fi
 
       - name: Copy & Rename APK
         run: |

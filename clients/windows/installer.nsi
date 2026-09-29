@@ -1,4 +1,4 @@
-; VPPRV1 NSIS Windows Installer Script
+; VPPRV1 NSIS Windows Installer Script (Xray Core)
 !define PRODUCT_NAME "VPPRV1"
 !define PRODUCT_VERSION "1.0.0"
 !define PRODUCT_PUBLISHER "VPPRV1 Platform"
@@ -19,7 +19,7 @@ ShowUnInstDetails show
 Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File /r "bin\Release\net8.0\win-x64\publish\*.*"
+  File /r "clients\windows\bin\Release\net8.0\win-x64\publish\*.*"
   
   CreateDirectory "$SMPROGRAMS\VPPRV1"
   CreateShortCut "$SMPROGRAMS\VPPRV1\VPPRV1.lnk" "$INSTDIR\VPPRV1.exe"
