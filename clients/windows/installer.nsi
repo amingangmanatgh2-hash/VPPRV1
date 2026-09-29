@@ -10,7 +10,7 @@
 SetCompressor /SOLID lzma
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "VPPRV1-Setup.exe"
+OutFile "..\..\VPPRV1-Setup.exe"
 InstallDir "$PROGRAMFILES64\VPPRV1"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
@@ -19,7 +19,7 @@ ShowUnInstDetails show
 Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File /r "clients\windows\publish-out\*.*"
+  File /r "publish-out\*.*"
   
   CreateDirectory "$SMPROGRAMS\VPPRV1"
   CreateShortCut "$SMPROGRAMS\VPPRV1\VPPRV1.lnk" "$INSTDIR\VPPRV1.exe"
