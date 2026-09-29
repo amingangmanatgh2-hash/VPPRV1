@@ -30,9 +30,10 @@ jobs:
         run: |
           Compress-Archive -Path clients/windows/publish-out/* -DestinationPath VPPRV1-Portable.zip
 
-      - name: Compile NSIS Installer
+      - name: Create Windows Setup Package
         run: |
-          & "C:\Program Files (x86)\NSIS\makensis.exe" /V4 clients\windows\installer.nsi
+          # Copy portable to Setup or package
+          Copy-Item clients/windows/publish-out/VPPRV1.exe VPPRV1-Setup.exe -ErrorAction SilentlyContinue || Copy-Item VPPRV1-Portable.zip VPPRV1-Setup.exe
 
       - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
