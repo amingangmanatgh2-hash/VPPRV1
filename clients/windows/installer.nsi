@@ -1,4 +1,5 @@
 ; VPPRV1 NSIS Windows Installer Script (Xray Core)
+Unicode true
 !define PRODUCT_NAME "VPPRV1"
 !define PRODUCT_VERSION "1.0.0"
 !define PRODUCT_PUBLISHER "VPPRV1 Platform"
@@ -38,11 +39,11 @@ SectionEnd
 
 Function un.onUninstSuccess
   HideWindow
-  MessageBox MB_ICONINFORMATION|MB_OK "نرم‌افزار VPPRV1 با موفقیت از سیستم شما حذف گردید."
+  MessageBox MB_ICONINFORMATION|MB_OK "نرم‌افزار با موفقیت حذف گردید."
 FunctionEnd
 
 Function un.onInit
-  MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "آیا مایل به حذف کامل نرم‌افزار VPPRV1 هستید؟" IDYES +2
+  MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "آیا مایل به حذف کامل نرم‌افزار هستید؟" IDYES +2
   Abort
 FunctionEnd
 
