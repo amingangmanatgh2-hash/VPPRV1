@@ -2,13 +2,15 @@
 
 <div align="center">
 
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/amingangmanatgh2-hash/VPPRV1)
+
 ![VPPRV1 Banner](https://img.shields.io/badge/VPPRV1-Xray%20Core%20%7C%20VLESS-10b981?style=for-the-badge)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers%20%2B%20D1-f38020?style=for-the-badge&logo=cloudflare)
 ![VPS Providers](https://img.shields.io/badge/VPS-Hetzner%20%7C%20Vultr%20%7C%20OVH-06b6d4?style=for-the-badge)
 
 **سامانه جامع، واقعی و پرسرعت مدیریت و توزیع کانفیگ‌های امن VLESS Reality و WebSocket مبتنی بر هسته Xray Core**
 
-[امکانات و قابلیت‌ها](docs/FEATURES.md) • [مستندات API](docs/API.md) • [راهنمای استقرار](docs/DEPLOY.md)
+[⚡ دپلوی مستقیم ۱-کلیک در داشبورد کلادفلر](https://deploy.workers.cloudflare.com/?url=https://github.com/amingangmanatgh2-hash/VPPRV1) • [امکانات و قابلیت‌ها](docs/FEATURES.md) • [مستندات API](docs/API.md)
 
 </div>
 
